@@ -9,6 +9,7 @@ The paper is the multi-pool extension of *The Geometric Siphon*. Under a positio
 | **Author** | K. R. Ryan, independent researcher |
 | **Contact** | [gancor.xyz](https://gancor.xyz) · ORCID [0009-0004-6295-7040](https://orcid.org/0009-0004-6295-7040) · code/reproduction questions via [GitHub Issues](https://github.com/g4nc0r/hidden-microstructure/issues) |
 | **Companion paper** | [*The Geometric Siphon* (SSRN 6686798)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6686798) |
+| **Code DOI** | [![DOI](https://zenodo.org/badge/1234950601.svg)](https://doi.org/10.5281/zenodo.20115374) - Foundry verification suite |
 | **Foundry** | `forge` ≥ 1.5; Solidity 0.8.26 |
 | **Licence** | code MIT (`LICENSE`); paper PDF and LaTeX source © K. R. Ryan, all rights reserved |
 
