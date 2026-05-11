@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the underlying SSRN paper (see references below)."
+title: "The Hidden Microstructure of Shared Balance Concentrated Liquidity: research repository"
+authors:
+  - family-names: Ryan
+    given-names: K. R.
+    alias: Gancor
+    orcid: "https://orcid.org/0009-0004-6295-7040"
+type: software
+repository-code: "https://github.com/g4nc0r/hidden-microstructure"
+license: MIT
+references:
+  - type: report
+    title: "The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos"
+    authors:
+      - family-names: Ryan
+        given-names: K. R.
+        orcid: "https://orcid.org/0009-0004-6295-7040"
+    year: 2026
+    institution:
+      name: "Social Science Research Network"
+    number: "6745218"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218"
+    notes: "Submitted; pending SSRN approval. Companion paper to The Geometric Siphon (SSRN 6686798)."
+  - type: report
+    title: "The Geometric Siphon (consolidated)"
+    authors:
+      - family-names: Ryan
+        given-names: K. R.
+        orcid: "https://orcid.org/0009-0004-6295-7040"
+    year: 2026
+    institution:
+      name: "Social Science Research Network"
+    number: "6686798"
+    url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6686798"

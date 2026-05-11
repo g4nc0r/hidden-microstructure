@@ -1,0 +1,53 @@
+# Foundry
+**/out/
+**/cache/
+**/broadcast/
+
+# Node
+**/node_modules/
+**/npm-debug.log*
+
+# Python build artefacts
+**/__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Syncthing
+.stfolder/
+.stversions/
+.stignore
+
+# LaTeX build artefacts (paper/ source compiles produce these alongside the .tex)
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Local-only data, scripts, and any future Zenodo-bound deposit tree.
+# A public reproduction harness, when added, lives at top-level reproduction/.
+scripts/
+data/
+data-submission/
+
+# Internal drafts, audit notes, literature scratch
+Working Notes/

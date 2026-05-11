@@ -1,0 +1,1482 @@
+% =========================================================================
+%  The Hidden Microstructure of Shared Balance Concentrated Liquidity
+%  Companion to The Geometric Siphon (K.R. Ryan, 2026)
+%  Compile: xelatex master-equation.tex && xelatex master-equation.tex
+% =========================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Fonts ----------------------------------------------------------------
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{texgyretermes}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+\setmathfont{texgyretermes-math.otf}
+\frenchspacing
+
+% --- Body size 11.5/13.5 --------------------------------------------------
+\makeatletter
+\renewcommand{\@xpt}{11.5}
+\renewcommand{\@xiipt}{13.5}
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize\@xpt\@xiipt
+  \abovedisplayskip 10\p@ \@plus2\p@ \@minus5\p@
+  \abovedisplayshortskip \z@ \@plus3\p@
+  \belowdisplayshortskip 6\p@ \@plus3\p@ \@minus3\p@
+  \belowdisplayskip \abovedisplayskip
+  \let\@listi\@listI}
+\makeatother
+\normalsize
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amsthm}
+\renewcommand\qedsymbol{\ensuremath{\mdlgblksquare}}
+\providecommand{\proofqed}{%
+  \nobreak\hfil\penalty50\hskip2em\hbox{}\nobreak\hfil%
+  \hbox{\ensuremath{\mdlgblksquare}}%
+  {\parfillskip=0pt \finalhyphendemerits=0 \par}}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\setlength{\extrarowheight}{2pt}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{figurename=Fig.,labelsep=period,margin=1.2cm,labelfont=footnotesize}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\titleformat{\section}[block]{\fontsize{13pt}{15pt}\bfseries}{\thesection.}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titleformat{\subsection}[block]{\fontsize{11.5pt}{13.5pt}\bfseries\itshape}{\thesubsection.}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{14pt}{6pt}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows,calc,shadows}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{indentfirst}
+\emergencystretch=1em
+\widowpenalty=10000
+\clubpenalty=10000
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\AtBeginDocument{%
+  \setlength{\abovedisplayskip}{18pt plus 3pt minus 2pt}%
+  \setlength{\belowdisplayskip}{18pt plus 3pt minus 2pt}%
+  \setlength{\abovedisplayshortskip}{14pt plus 2pt minus 1pt}%
+  \setlength{\belowdisplayshortskip}{14pt plus 2pt minus 1pt}%
+}
+\renewcommand{\arraystretch}{1.2}
+\AtBeginEnvironment{tabular}{\footnotesize}
+\AtBeginEnvironment{longtable}{\small}
+\usepackage{microtype}
+\usepackage[bottom]{footmisc}
+\usepackage[superscript,biblabel]{cite}
+
+\makeatletter
+\renewenvironment{thebibliography}[1]
+  {\section*{\refname}%
+   \fontsize{10pt}{12pt}\selectfont
+   \list{\@biblabel{\@arabic\c@enumiv}}%
+        {\settowidth\labelwidth{\@biblabel{#1}}%
+         \leftmargin\labelwidth
+         \advance\leftmargin-0.8em
+         \advance\leftmargin\labelsep
+         \setlength\itemindent{1em}%
+         \setlength\itemsep{6pt plus 1pt minus 1pt}%
+         \setlength\parsep{0pt}%
+         \usecounter{enumiv}%
+         \let\p@enumiv\@empty
+         \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+   \sloppy\clubpenalty4000\widowpenalty4000\sfcode`\.\@m}
+  {\def\@noitemerr{\@latex@warning{Empty `thebibliography' environment}}%
+   \endlist}
+\makeatother
+
+\usepackage{etoolbox}
+
+\renewenvironment{abstract}{%
+  \fontsize{10pt}{13pt}\selectfont
+  \begin{list}{}{%
+    \setlength{\leftmargin}{0.5in}%
+    \setlength{\rightmargin}{0.5in}%
+    \setlength{\listparindent}{0pt}%
+    \setlength{\parsep}{6pt plus 2pt minus 1pt}%
+    \setlength{\topsep}{0pt}%
+    \setlength{\partopsep}{0pt}%
+  }\item[]\noindent\textbf{Abstract.}\hspace{0.5em}\ignorespaces
+}{\end{list}}
+
+\usepackage{xcolor}
+\usepackage{mdframed}
+\newenvironment{codeblock}{%
+  \begin{mdframed}[%
+    backgroundcolor=brown!3!white,%
+    linewidth=0pt,%
+    innertopmargin=6pt,%
+    innerbottommargin=6pt,%
+    innerleftmargin=12pt,%
+    innerrightmargin=12pt,%
+    leftmargin=0.075\linewidth,%
+    rightmargin=0.075\linewidth,%
+    skipabove=6pt,%
+    skipbelow=6pt%
+  ]\footnotesize%
+}{%
+  \end{mdframed}%
+}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  allcolors=blue!50!black,
+  pdfauthor={K.R. Ryan},
+  pdftitle={The Hidden Microstructure of Shared Balance Concentrated Liquidity},
+  pdfsubject={A Master Equation for the Dust Ledger and Propagation of Chaos},
+  pdfkeywords={concentrated liquidity, geometric residual, propagation of chaos, interacting particle systems, multi-pool rebalancing, stochastic flow networks, dust ledger, Uniswap V3, Aerodrome, automated market maker, DeFi mechanism design}
+}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape K.R.\ Ryan}
+\fancyhead[R]{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+
+\setlength{\parindent}{18pt}
+\setlength{\parskip}{0pt}
+
+% =========================================================================
+\begin{document}
+\sloppy
+\thispagestyle{plain}
+
+\begin{center}
+{\fontsize{25pt}{29pt}\selectfont The Hidden Microstructure of\\[14pt]
+Shared Balance Concentrated Liquidity}\\[16pt]
+{\fontsize{17pt}{18pt}\selectfont A Master Equation for the Dust Ledger and Propagation of Chaos\strut}
+
+\vspace{24pt}
+{\large K.R.\ Ryan}\\[4pt]
+{\fontsize{9pt}{11pt}\selectfont Independent Researcher \quad|\quad ORCID - 0009-0004-6295-7040 \quad|\quad \href{mailto:gancor@gancor.xyz}{gancor@gancor.xyz}}\\[4pt]
+{\fontsize{9pt}{11pt}\selectfont May 2026}
+
+\vspace{8pt}
+{\fontsize{9pt}{11pt}\selectfont
+\textbf{Keywords}\hspace{0.6em}geometric residual \textperiodcentered\ interacting particle systems \textperiodcentered\ multi-pool rebalancing \textperiodcentered\ dust ledger \\
+Uniswap V3 \textperiodcentered\ DeFi mechanism design\\[4pt]
+\textbf{JEL:} C63, C65, D47, G14}
+\end{center}
+
+\vspace{-1pt}
+\centerline{\scalebox{1.5}{$\therefore$}}
+\vspace{14pt}
+
+\begin{abstract}
+The geometric residual identified in the prior paper\cite{ryan2026siphon} takes a richer form once a concentrated liquidity manager retains it in a depositor-keyed dust ledger shared across multiple pools. The residual is no longer isolated to its own rebalance, but becomes a hidden state coupling the portfolio's pools. This paper derives the closed-form law governing that state. Theorem~\ref{thm:binding} (the Master Equation) gives the exact per-event jump law on any pool, induced by the V3 mint geometry at rebalance, and recovers the prior result in the single-pool swap-free corner. Proposition~\ref{thm:connector} promotes the prior paper's Connector Rule conjecture to a sign-keyed correlation under explicit V3-mechanical assumptions, while Theorem~\ref{thm:extinction} generalises zero-swap extinction to a per-token mass-conservation identity across multi-pool rebalances, with a donor/absorber partition under heterogeneous arrival. On the homogeneous hub-spoke topology, Proposition~\ref{thm:chaos2A} establishes a conditional propagation-of-chaos limit under uniform-in-$N$ hub mixing, and Proposition~\ref{thm:chaos2B} identifies the limiting one-spoke marginal as a binary atom-mixture whose mass and shape are determined by the slippage law of the in-pool swap correction. The half-normal mixture obtained under symmetric Gaussian slippage is a narrow corollary. The empirical anchor spans roughly $34{,}500$ rebalance events over the V6 through V9 evolution of a PM contract family on Aerodrome Slipstream (Base) under one operator, with per-event predictions matching on-chain dust credits at median ratio $1.0000$ throughout. Contract-level verification reproduces the closed form against unmodified Aerodrome Slipstream and Uniswap V3 infrastructure to bit-exact tolerance. The asymptotic factorisation and atom-mixture form are empirically consistent with V9-realistic asymmetric heavy-tailed slippage at the kernel level; the heterogeneous per-spoke V9 marginal is left as an open extension problem, and cross-operator replication remains open.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+A concentrated liquidity (CL) position holds two tokens within a sqrt-price range and must be rebalanced (withdrawn, optionally swap-corrected, and re-minted into a new range) whenever the price drifts outside that range. The V3 mint geometry fixes the input ratio at any sqrt-price inside the new range, so the supplied amounts almost never coincide exactly with what the new mint requires. Each rebalance therefore leaves a leftover on one side of the pair. On a stock \texttt{NonfungiblePositionManager} (NFPM), that leftover is simply returned to the depositor and disappears from the subsequent state of the manager. The architecture studied here departs from that default by retaining it in a depositor-keyed mapping shared across the depositor's positions, from which later mints may draw as standing input. It is this mapping that will be called the \emph{dust ledger}.
+
+The prior paper\cite{ryan2026siphon} isolated the single-pool, swap-free leftover as a closed-form per-event residual. What matters here is that, once the leftover is retained and recycled across multiple pools, it is no longer merely the by-product of an individual rebalance. It becomes a shared state variable on the portfolio, coupling one position's residual to another position's mint. The question is then no longer only what residual a given rebalance leaves behind, but what law governs the evolution of the standing balance once the architecture itself recycles that balance across the portfolio.
+
+The empirical instance is a Position Manager built on Aerodrome Slipstream (Base), which evolved through four independently deployed versions (PM~V6 through V9) over a 23-day window in March 2026. All four implement the same depositor-keyed shared dust ledger, and the per-event closed form of the prior paper holds on every one across roughly $34{,}500$ rebalance events. That persistence across four reimplementations is what makes it natural to analyse the dust ledger as a system rather than as a curiosity of one contract, though the four contracts still share a single operator; cross-operator replication of the framework developed here remains open, with the underlying dust-circulation mechanism itself observed in independent operator data\cite{pi2026convexity}.
+
+Three questions arise in that setting. What is the per-event update law on a multi-pool dust ledger, once standing balance and contract-level swap correction are admitted? What conservation structure does such a ledger impose on a portfolio of positions through time? And what asymptotic regime emerges as the portfolio scales? The present paper answers those questions in closed form. Theorem~\ref{thm:binding} gives the per-event jump on any pool, including standing balance and swap correction, and is validated event-by-event against on-chain data. Proposition~\ref{thm:connector} promotes the prior paper's Connector Rule conjecture to a sign-keyed correlation under explicit V3-mechanical assumptions. Theorem~\ref{thm:extinction} generalises the zero-swap extinction result to a per-token mass-conservation identity across multi-pool rebalances, together with a donor/absorber partition under heterogeneous arrival. On the homogeneous hub-spoke topology, Proposition~\ref{thm:chaos2A} establishes that under uniform-in-$N$ hub mixing the stationary $m$-spoke marginals factorise asymptotically; this is the propagation-of-chaos result, and the factorisation diagnostic is consistent across slippage-law families in the empirical study of Section~\ref{sec:framework_predictions}. Building on 2A, Proposition~\ref{thm:chaos2B} characterises the limiting one-spoke marginal as a binary mixture of an atom at zero and a slack-side density, with mass and shape determined by the slippage law and valid under arbitrary $\nu_\varepsilon$. The half-normal mixture obtained when the slippage is symmetric mean-zero Gaussian is a narrow corollary, applicable in idealised positions but not in the full V9 production regime; the per-spoke V9 marginal variation lies outside this homogeneous closure and is named as an open extension problem. Fig.~\ref{fig:hierarchy} summarises the resulting hierarchy.
+
+\vspace{22pt}
+\begin{figure}[H]
+\centering
+\definecolor{layerteal}{HTML}{1A535C}
+\definecolor{layerfill1}{HTML}{D8EAE7}
+\definecolor{layerfill2}{HTML}{E5EFEC}
+\definecolor{layerfill3}{HTML}{EFF5F3}
+\definecolor{corcrimson}{HTML}{C0392B}
+\definecolor{corfill}{HTML}{F5E0DD}
+\begin{tikzpicture}[
+    >=latex,
+    font=\footnotesize,
+    layer1/.style   = {rectangle, draw=layerteal, line width=0.9pt,
+                       fill=layerfill1, minimum width=12.5cm, minimum height=0.72cm,
+                       align=left, inner sep=5pt, rounded corners=3pt,
+                       text width=12.0cm,
+                       drop shadow={shadow xshift=0.6pt, shadow yshift=-0.6pt, opacity=0.16}},
+    layer2/.style   = {rectangle, draw=layerteal!85, line width=0.8pt,
+                       fill=layerfill2, minimum width=12.0cm, minimum height=0.72cm,
+                       align=left, inner sep=5pt, rounded corners=3pt,
+                       text width=11.5cm,
+                       drop shadow={shadow xshift=0.6pt, shadow yshift=-0.6pt, opacity=0.14}},
+    layer3/.style   = {rectangle, draw=layerteal!70, line width=0.7pt,
+                       fill=layerfill3, minimum width=11.5cm, minimum height=0.72cm,
+                       align=left, inner sep=5pt, rounded corners=3pt,
+                       text width=11.0cm,
+                       drop shadow={shadow xshift=0.6pt, shadow yshift=-0.6pt, opacity=0.12}},
+    cor/.style      = {rectangle, draw=corcrimson!80, line width=0.7pt,
+                       fill=corfill, minimum width=11.0cm, minimum height=0.72cm,
+                       align=left, inner sep=5pt, rounded corners=3pt,
+                       text width=10.5cm,
+                       drop shadow={shadow xshift=0.6pt, shadow yshift=-0.6pt, opacity=0.16}},
+    open/.style     = {rectangle, draw=gray!60, line width=0.6pt, dashed,
+                       fill=gray!5, minimum width=12.5cm, minimum height=0.72cm,
+                       align=left, inner sep=5pt, rounded corners=3pt,
+                       text width=12.0cm},
+    arrow/.style    = {->, draw=black!55, shorten >=2pt, shorten <=2pt, line width=0.7pt},
+    arrlbl/.style   = {font=\scriptsize\itshape, text=black!60, inner sep=1pt},
+]
+\node[layer1] (l1)
+  {\textbf{Theorem~\ref{thm:binding}\quad Master Equation (per-event jump law)}\\[1pt]
+   {\scriptsize Closed form on any pool, including standing balance and swap correction.}};
+
+\node[layer2, below=0.42cm of l1] (l2)
+  {\textbf{Proposition~\ref{thm:chaos2A}\quad Asymptotic factorisation in $N$}\\[1pt]
+   {\scriptsize Spoke marginals become asymptotically independent on the homogeneous hub-spoke topology.}};
+
+\node[layer3, below=0.42cm of l2] (l3)
+  {\textbf{Proposition~\ref{thm:chaos2B}\quad Atom-mixture spoke marginal}\\[1pt]
+   {\scriptsize Limiting one-spoke marginal under arbitrary slippage law, to leading order in $w$.}};
+
+\node[cor, below=0.42cm of l3] (l4)
+  {\textbf{Corollary~\ref{cor:halfnormal}\quad Half-normal mixture}\\[1pt]
+   {\scriptsize Special case under symmetric Gaussian slippage.}};
+
+\node[open, below=0.42cm of l4] (l5)
+  {\textbf{Open extension (\S\ref{sec:future})\quad Heterogeneous V9 regime}\\[1pt]
+   {\scriptsize Per-spoke and topology-dependent regime, outside the homogeneous closure.}};
+
+\draw[arrow] (l1.south) -- (l2.north);
+\node[arrlbl, anchor=west, xshift=5pt] at ($(l1.south)!0.5!(l2.north)$) {asymptotic in $N$};
+\draw[arrow] (l2.south) -- (l3.north);
+\node[arrlbl, anchor=west, xshift=5pt] at ($(l2.south)!0.5!(l3.north)$) {small-$w$ specialisation};
+\draw[arrow] (l3.south) -- (l4.north);
+\node[arrlbl, anchor=west, xshift=5pt] at ($(l3.south)!0.5!(l4.north)$) {symmetric Gaussian $\nu_\varepsilon$};
+
+\end{tikzpicture}
+\caption{Hierarchy of dust-ledger laws. Each layer specialises its predecessor; the dashed open extension lies outside the homogeneous symmetric closure (\S\ref{sec:future}).}
+\label{fig:hierarchy}
+\end{figure}
+
+\section{Related work}\label{sec:related}
+
+The geometric residual was introduced in the prior paper\cite{ryan2026siphon}, to which the present one is directly indebted. In particular, this paper extends that work's Theorem~1 (vanishing condition), Theorem~2 (single-pool convergence), Theorem~3 (zero-swap extinction), and the architectural-precondition argument of \S7.1. The empirical hub-spoke pattern reported in \S5.4 of that paper (Group~B) is, in retrospect, the simplest non-trivial special case of the framework developed here.
+
+\emph{Convexity and Topology in Cross-Pool Dust Redistribution}\cite{pi2026convexity} (2026) provides a graph-theoretic characterisation of cross-pool dust circulation, including a degree-based residence-time identity (its Proposition~2) and a directional convexity scaling (its Proposition~3). Projecting the bipartite graph $G$ onto its token vertices recovers that work's portfolio graph, and its Proposition~2 corresponds to the degree-versus-velocity scaling that reappears in the hub-spoke analysis of Section~\ref{sec:chaos_statement} below.
+
+The closest existing formal frameworks for V3 LP value loss concern costs incurred while a position is open. Cartea \emph{et al.}\cite{cartea2024} introduce \emph{predictable loss} (PL), a measure of the unhedgeable loss borne by strategic LPs, combining the convexity of the LP's position-value function with the opportunity cost of locked capital. Milionis \emph{et al.}\cite{milionis2022b} introduce \emph{loss-versus-rebalancing} (LVR) for general CFMMs, defined as the return gap between an AMM LP and a continuously rebalancing benchmark under arbitrage against stale prices. Both frameworks concern losses accumulating between rebalances. The present paper concerns a different object, the per-rebalance redistribution of value through a depositor-keyed dust ledger shared across multiple pools. The contrast is not merely verbal. The geometric residual is zero on same range rebalances regardless of price travel (Theorem~1 of the prior paper), whereas LVR is generally non-zero whenever the AMM price drifts. A multi-pool manager subject to the Master Equation is therefore also subject to PL and LVR between rebalances, but the V6 through V9 empirical anchor of Section~\ref{sec:cross_version} concerns only the jump at the rebalance itself.
+
+Empirical work on V3 LP returns has largely focused on position-level risk and return distributions. Heimbach \emph{et al.}\cite{heimbach2022} derive an analytical impermanent loss expression for V3 and show empirically that LP outcomes vary materially across strategies, with active management playing a substantial role. The roughly $34{,}500$-event anchor used here extends that empirical line from aggregate position outcomes to the event-level dynamics of a shared dust ledger.
+
+The propagation-of-chaos argument of Section~\ref{sec:chaos} belongs to a classical line of work. Sznitman\cite{sznitman1991} reviews the foundational theory of mean-field limits for interacting particle systems, and uses the term \emph{master equations} in the sense of the forward Markov equations for $N$-particle systems. The homogeneous hub-spoke chain studied here is a discrete-event instance of that general setting. Closer in spirit is Graham and M\'el\'eard\cite{graham1993}, who prove propagation of chaos in variation norm on the laws of sample paths for a fully connected loss network with alternate routing. The correspondence is not exact, but it is more than superficial; their alternate-routing structure is the analogue of cross-pool absorption in the dust ledger, and both processes are non-exchangeable interacting jump systems coupling through shared state.
+
+The modern survey of the propagation-of-chaos literature is Chaintron and Diez\cite{chaintron2022}. Their discussion of mean-field jump processes and piecewise deterministic Markov processes (\S2.2.3), together with their treatment of interaction-graph methods (\S4.5.2), provides the most directly relevant technical backdrop for Section~\ref{sec:chaos}. In their sense, the dust ledger is a piecewise deterministic Markov process, constant between rebalance events with jumps at exogenous Poisson times. The bipartite-graph stochastic-flow framing of Section~\ref{sec:setup} also has an evident family resemblance to Kelly's closed-network framework\cite{kelly1979}. Chapters~2--3 of Kelly develop closed migration processes and closed queueing networks; the per-token mass conservation of Theorem~\ref{thm:extinction} is analogous to closed-network conservation of total customer count. The analogy is nevertheless limited. Rebalance arrivals here are exogenous rather than state-dependent, and the dust-creation kernel has no Kelly-style reversibility.
+
+Mean-field game theory provides a separate, though related, lineage. Propagation-of-chaos arguments are now standard in continuous-time finance models of portfolio choice and equilibrium interaction, as in Carmona and Delarue\cite{carmona2018}, while Cardaliaguet, Delarue, Lasry, and Lions\cite{cardaliaguet2019} develop a different \emph{master equation} framework on the space of probability measures, arising as the asymptotic-$N$ limit of $N$-player Nash systems. That literature is relevant chiefly for orientation. The present paper's usage of \emph{master equation} sits much closer to the $N$-particle Markov sense reviewed by Sznitman (Chapter~0) than to the second-order PDE on Wasserstein space studied in mean field games. To the author's knowledge, the discrete-event jump-kernel framing developed here has not previously been applied to AMM dust-ledger dynamics in the DeFi literature.
+
+The underlying V3 mechanics are Adams \emph{et al.}\cite{adams2021v3}; the V3 amount equations of Appendix~\ref{app:v3formulas} follow their equations 6.29--6.30.
+
+\section{The system}\label{sec:setup}
+
+The notation follows the prior paper\cite{ryan2026siphon}, extending scalar quantities to vector-valued, time-indexed analogues; a glossary is in Appendix~\ref{app:notation}. USD-value statements are evaluated at fixed reference token prices $(p_1, \ldots, p_n)$. The framework abstracts from fees and MEV; per-event LP fees, gas, and externally induced rebalance MEV are assumed not to enter the dust ledger.
+
+\paragraph{Portfolio.} A portfolio consists of $m$ concentrated liquidity positions held by a single depositor on a single PM contract, across $n$ tokens. It induces a bipartite graph $G$ between token nodes $\{T_1, \ldots, T_n\}$ and pool nodes $\{P_1, \ldots, P_m\}$, with an edge between $T_i$ and $P_k$ whenever token $T_i$ belongs to pool $P_k$. Pool nodes therefore have degree 2, while the token-side degree $\deg(T_i)$ counts the pools containing $T_i$. For each pool $P_k$ with token pair $(T_a, T_b)$, we follow the V3 ordering convention throughout, with $T_a$ occupying the $T_0$ position and $T_b$ the $T_1$ position.
+
+\paragraph{Dust ledger.} The dust ledger is the standing-balance vector $D_{\text{pool}}(t) \in \mathbb{R}^n_{\geq 0}$, with one component per portfolio token. It is piecewise constant between rebalance events, with a deterministic jump whenever a pool containing that token rebalances. For a pool $P_k$ with tokens $(T_a, T_b)$, the pool-local snapshot is $(x_{\text{dust}}, y_{\text{dust}}) = (D_{\text{pool},T_a}(t), D_{\text{pool},T_b}(t))$.
+
+\paragraph{Rebalance events.} Rebalance events arrive at random times $\tau_1, \tau_2, \ldots$, exogenous to the dust state. Each event records the pool $P_k$, the old range $[s_a, s_b]$, the new range $[s_a', s_b']$, the sqrt-price $s(\tau)$, the pre-event position value $V(\tau^-)$, and the signed pool-frame swap correction $(\sigma_x, \sigma_y) \in \mathbb{R}^2$ defined in Section~\ref{sec:swap}.
+
+\section{The Master Equation}\label{sec:masterequation}
+
+This section states the paper's central object, Theorem~\ref{thm:binding}, giving the closed-form per-event jump on any pool. Sections~\ref{sec:multipool} and~\ref{sec:chaos} then consider its multi-pool consequences and asymptotic limit.
+
+\subsection{Per-event jump}\label{sec:perevent}
+
+The per-event update of the dust ledger is the closed-form solution of a one-dimensional linear programme induced by the V3 mint geometry.
+
+\begin{theorem}[Master Equation jump]\label{thm:binding}
+Let $P_k$ be a pool with tokens $T_a$ at the $T_0$ position and $T_b$ at the $T_1$ position, sqrt-price $s$, old range $[s_a, s_b]$, and new range $[s_a', s_b']$, with $s \in (s_a', s_b')$, i.e.\ in the interior of the new range. Let the position's old liquidity be $L$, with token amounts
+\begin{equation}\label{eq:oldamount}
+x_w = L\,a_x(s, s_a, s_b), \qquad y_w = L\,a_y(s, s_a, s_b),
+\end{equation}
+where $a_x, a_y$ are the V3 amount functions (Appendix~\ref{app:v3formulas}). Let the standing balance be $(x_{\text{dust}}, y_{\text{dust}})$ and the signed swap correction be $(\sigma_x, \sigma_y)$, so that the mint inputs are
+\begin{equation}\label{eq:avail}
+\hat x = x_w + x_{\text{dust}} - \sigma_x, \qquad \hat y = y_w + y_{\text{dust}} - \sigma_y.
+\end{equation}
+Write $g_x = a_x(s, s_a', s_b')$ and $g_y = a_y(s, s_a', s_b')$ for the per-unit-$L$ token amounts at the new range. Then the new liquidity is
+\begin{equation}\label{eq:lnew}
+L_{\text{new}} \;=\; \min\!\left(\frac{\hat x}{g_x},\ \frac{\hat y}{g_y}\right),
+\end{equation}
+and the new dust-ledger entries for $T_a, T_b$ are
+\begin{equation}\label{eq:newdust}
+x_{\text{dust}}' \;=\; \hat x - L_{\text{new}}\,g_x, \qquad y_{\text{dust}}' \;=\; \hat y - L_{\text{new}}\,g_y,
+\end{equation}
+both non-negative. In the swap-free regime ($\sigma_x = \sigma_y = 0$), at least one of $x_{\text{dust}}', y_{\text{dust}}'$ is zero by the LP-min structure, and exactly one is zero off the measure-zero ratio-preserving locus $\{\hat x / \hat y = g_x / g_y\}$ in input-ratio space; the non-zero leftover is $|\Delta R|$ in the notation of \S3.2 of the prior paper\cite{ryan2026siphon}, namely the surplus on the slack-side token.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The mint maximises $L_{\text{new}}$ subject to the two non-negativity constraints $L_{\text{new}}\,a_x(s, s_a', s_b') \leq \hat x$ and $L_{\text{new}}\,a_y(s, s_a', s_b') \leq \hat y$. Since the objective is increasing in $L_{\text{new}}$, the optimum lies where one constraint binds, or where both bind simultaneously. If both bind, the leftover is zero on both tokens; this is the ratio-preserving locus of Theorem~1 of the prior paper, of measure zero on the displacement axis. Otherwise exactly one constraint binds, and the surplus on the slack side appears as dust. The full derivation, including the swap-corrected case, is given in Appendix~\ref{app:masterproof}.
+\end{proof}
+
+Each rebalance withdraws the old position, recycles the pool's standing dust into the mint inputs, optionally applies a swap correction (Section~\ref{sec:swap}), and credits the LP leftover to the dust mapping for the pool's two tokens. Standing balances for tokens outside the pool are unchanged:
+\begin{equation}\label{eq:master}
+D_{\text{pool},i}(\tau_N^+) \;=\; \begin{cases}
+x_{\text{dust}}' & \text{if } T_i = T_a, \\[2pt]
+y_{\text{dust}}' & \text{if } T_i = T_b, \\[2pt]
+D_{\text{pool},i}(\tau_N^-) & \text{otherwise.}
+\end{cases}
+\end{equation}
+All terms in \eqref{eq:master} are observable per event from on-chain data and contract state. The single-pool swap-free corner ($m = 1$, $\sigma_x = \sigma_y = 0$) recovers Theorems~1 and~3 of the prior paper. As a worked example, the canonical Foundry test of that paper's \S6 (1~WETH plus 2{,}500~USDC minted at tick 73{,}135, displaced by $+200$ ticks, and rebalanced into a $\pm 1{,}000$-tick range) yields a 2{,}061~USDC residual on the bound side from \eqref{eq:newdust} alone, matching the value reported there. Fig.~\ref{fig:jumpflow} summarises the jump structure.
+
+\begin{figure}[H]
+\centering
+\definecolor{nodeteal}{HTML}{1A535C}
+\definecolor{nodetealfill}{HTML}{D8EAE7}
+\definecolor{nodecrimson}{HTML}{C0392B}
+\definecolor{nodecrimsonfill}{HTML}{F5E0DD}
+\definecolor{nodegray}{HTML}{707070}
+\definecolor{nodegrayfill}{HTML}{ECECEC}
+\begin{tikzpicture}[
+    >=latex,
+    font=\small,
+    src/.style       = {rectangle, draw=nodeteal, line width=0.8pt,
+                        fill=nodetealfill, minimum width=2.4cm, minimum height=0.8cm, align=center,
+                        font=\footnotesize, inner sep=3pt, rounded corners=2pt,
+                        drop shadow={shadow xshift=0.5pt, shadow yshift=-0.5pt, opacity=0.16}},
+    proc/.style      = {rectangle, draw=nodegray, line width=0.8pt,
+                        fill=nodegrayfill, minimum width=3.4cm, minimum height=0.9cm, align=center,
+                        font=\footnotesize, inner sep=3pt, rounded corners=2pt,
+                        drop shadow={shadow xshift=0.5pt, shadow yshift=-0.5pt, opacity=0.16}},
+    outp/.style      = {rectangle, draw=nodecrimson!80, line width=0.8pt,
+                        fill=nodecrimsonfill, minimum width=2.4cm, minimum height=0.8cm, align=center,
+                        font=\footnotesize, inner sep=3pt, rounded corners=2pt,
+                        drop shadow={shadow xshift=0.5pt, shadow yshift=-0.5pt, opacity=0.16}},
+    arrow/.style     = {->, draw=black!60, shorten >=2pt, shorten <=2pt, line width=0.55pt},
+]
+\node[src] (pos)    at (0, 3) {$(x_w, y_w)$ \\[-2pt] {\scriptsize position withdraw}};
+\node[src] (dust)   at (0, 1.5) {$x_{\text{dust}}, y_{\text{dust}}$ \\[-2pt] {\scriptsize standing dust}};
+\node[src] (swap)   at (0, 0) {$-\sigma_x, -\sigma_y$ \\[-2pt] {\scriptsize swap correction}};
+\node[proc] (sum)   at (4.3, 1.5) {$(\hat x, \hat y)$ \\[-2pt] {\scriptsize mint inputs}};
+\node[proc] (mint)  at (8.3, 1.5) {Mint LP \\[-2pt] {\scriptsize $L_{\text{new}} = \min(\hat x/g_x, \hat y/g_y)$}};
+\node[outp] (used)  at (12.4, 2.4) {$L_{\text{new}}$ \\[-2pt] {\scriptsize new position}};
+\node[outp] (left)  at (12.4, 0.6) {$x_{\text{dust}}', y_{\text{dust}}'$ \\[-2pt] {\scriptsize dust credit}};
+\foreach \src in {pos, dust, swap} {
+    \draw[arrow] (\src.east) -- (sum.west);
+}
+\draw[arrow] (sum.east) -- (mint.west);
+\draw[arrow] (mint.east) -- (used.west);
+\draw[arrow] (mint.east) -- (left.west);
+\end{tikzpicture}
+\caption{Per-event jump of the Master Equation.}
+\label{fig:jumpflow}
+\end{figure}
+
+\subsection{Swap correction}\label{sec:swap}
+
+PM~V9 supports an atomic in-pool swap\footnote{Position Manager configuration \texttt{AUTO\_OPTIMAL}.} as part of the rebalance transaction, executed when needed to align the supplied tokens with the ratio required by the new range. The swap routes through the rebalance pool itself and uses the contract's own balance, exchanging part of the over-supplied token for the under-supplied one. This is the modal production configuration, with an in-pool swap firing on 74--96\% of V9 rebalances across the active portfolios examined (Appendix~\ref{app:methodology}).
+
+On chain, the swap appears as a Pool.Swap event in the same transaction as the rebalance, with signed amount fields $(\alpha_0, \alpha_1)$ in the pool's frame. In the contract's frame, $(\sigma_x, \sigma_y) = (\alpha_0, \alpha_1)$ enter the mint-inputs equation~\eqref{eq:avail} directly. Theorem~\ref{thm:binding} covers the swap-free and swap-present cases in a single form, with $\hat x, \hat y$ shifting linearly by $(-\sigma_x, -\sigma_y)$ and the LP structure unchanged. Under in-pool routing the closed form uses the pre-swap tick for the withdraw amounts and the post-swap tick for the geometry of the new range (Appendix~\ref{app:methodology}).
+
+\section{Multi-pool consequences}\label{sec:multipool}
+
+Beyond the per-event jump, the Master Equation has two consequences for multi-pool portfolios, summarised alongside the asymptotic limit in Table~\ref{tab:stages}.
+
+\begin{table}[H]
+\centering
+\caption{Stages of the Master Equation framework.}
+\label{tab:stages}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Stage & Mechanism & Result & Empirical anchor \\
+\midrule
+Per-event   & LP solve at the V3 mint        & Theorem~\ref{thm:binding}       & \S\ref{sec:cross_version}, \S\ref{sec:results}, \S\ref{sec:lift} \\
+Cross-pool  & Connector-side correlation     & Proposition~\ref{thm:connector} & \S\ref{sec:framework_predictions} \\
+Portfolio   & Donor/absorber under $S=0$     & Theorem~\ref{thm:extinction}    & \S\ref{sec:framework_predictions} \\
+Asymptotic  & Factorisation in $N$           & Proposition~\ref{thm:chaos2A}   & \S\ref{sec:framework_predictions} \\
+Asymptotic  & Atom-mixture spoke marginal    & Proposition~\ref{thm:chaos2B}   & \S\ref{sec:chaos_numerical}, \S\ref{sec:framework_predictions} \\
+            & (half-normal mixture under     & Corollary~\ref{cor:halfnormal}  & \S\ref{sec:chaos_numerical} \\
+            & symmetric Gaussian)            &                                  & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Connector Rule}\label{sec:connectorrule}
+
+The Connector Rule of \S3.5 of the prior paper\cite{ryan2026siphon} conjectures that per-rebalance dust-flow direction is dominated by the higher-connectivity token
+\[
+T^* = \arg\max\{\deg(T_a),\, \deg(T_b)\},
+\]
+supported by 10 per-pool Spearman correlations in $[-0.98, -0.56]$. The Master Equation makes the mechanism explicit. By~\eqref{eq:newdust}, the binding side at each rebalance is determined by the supply ratio, and the displacement of a connector shared across pools contains a common component that co-moves with the slack-side dust. The sign of that co-movement depends on which side of the pool the connector occupies (positive at $T_0$, negative at $T_1$), a prediction the prior paper's sample of $T_1$-only connectors could not test.
+
+\begin{proposition}[Connector Rule under V3 mechanics]\label{thm:connector}
+Let $G$ be a portfolio bipartite graph with a multi-pool connector token $T^*$ such that $\deg(T^*) \geq 2$ and $\deg(T^*) > \deg(T)$ for every token $T \neq T^*$ appearing in any pool containing the connector. Assume:
+\begin{enumerate}[leftmargin=*,label=(\roman*)]
+\item the connector token's marginal sqrt-price evolution against the rest of the portfolio is stationary over the rebalance arrival window;
+\item the per-pool sqrt-price displacement at the rebalance moment decomposes additively into a shared connector-token component and a pool-specific noise term;
+\item the mint-time sqrt-price lies in the interior of the new range with probability one.
+\end{enumerate}
+Define the \emph{signed connector-side dust quantity} at a rebalance as the dust credited to the non-connector side minus the dust credited to the connector's side, so that it is positive when the non-connector side leaks. Under (i)--(iii), across rebalances of pools containing $T^*$, the per-pool Spearman rank correlation between signed sqrt-price displacement and signed connector-side dust quantity has a deterministic sign keyed to the pool position of $T^*$: positive when $T^*$ occupies the $T_0$ position, and negative when it occupies the $T_1$ position. Its magnitude is governed by the variance share of the connector-shared component in the displacement decomposition; under the homogeneity assumption in (ii), that share gives a lower bound.
+\end{proposition}
+
+Proof in Appendix~\ref{app:connectorproof}; V9 verification in Section~\ref{sec:framework_predictions}.
+
+\subsection{Donor/absorber decomposition}\label{sec:extinction}
+
+Under shared depositor balances, residuals left by one pool may be absorbed into the mint inputs of another. Theorem~3 of the prior paper\cite{ryan2026siphon} shows that a single position under $S = 0$ decays geometrically. Once depositor-keyed dust is shared across multiple pools, that strict extinction is replaced by a per-token mass-conservation identity holding across rebalances at the contemporaneous sqrt-price.
+
+\begin{theorem}[Multi-pool mass conservation under $S=0$]\label{thm:extinction}
+Let a portfolio have $m \geq 2$ positions sharing a depositor-keyed dust mapping, and let $a_{k,i}$ denote position $k$'s implied amount of token $T_i$ at sqrt-price $s$ (equal to $L^{(k)} a_x(s, s_a^{(k)}, s_b^{(k)})$ when $T_i = T_0$ in pool $P_k$, analogously for $T_1$, and zero when $T_i \notin P_k$). Under $S = 0$ rebalances, and in the absence of LP fees and external token transfers, the per-token total
+\begin{equation}\label{eq:masscons}
+M_i(t) \;:=\; \sum_k a_{k,i}\bigl(s(\tau)\bigr) \;+\; D_{\text{pool},i}(t)
+\end{equation}
+is invariant across rebalance events, evaluated at the contemporaneous sqrt-price $s(\tau)$ of each event, modulo integer tick-rounding remainders. The fixed-price USD aggregate
+\[
+V_{\text{total}}(t) \;:=\; \sum_k \sum_i a_{k,i}\bigl(s(\tau)\bigr)\,p_i \;+\; \sum_i D_{\text{pool},i}(t)\,p_i
+\]
+inherits the same event-level invariance. The single-pool corner $m = 1$ recovers the swap-free single-pool regime of the prior paper. Under $S = 0$, the lone position decays geometrically by Theorem~3 there; under non-zero $S$, the $m = 1$ corner is the convergence-in-expectation regime of Theorem~2 there.
+\end{theorem}
+
+\paragraph{Remark (Donor/absorber decomposition).}\label{rem:partition}
+Let the per-position USD-value change at a rebalance of pool $P_k$ be
+\[
+\Delta V_k = L_{\text{new}}^{(k)}\, v_k^{\text{new}}(s) - L^{(k)}\, v_k^{\text{old}}(s),
+\]
+with $v_k^{\text{old}}$ and $v_k^{\text{new}}$ the per-unit-$L$ position values at sqrt-price $s$ over the old and new ranges respectively. Cumulating $\Delta V_k$ over a window gives the position's net cumulative dust impact; a position with negative cumulative impact is a \emph{net donor} over the window, and one with positive cumulative impact a \emph{net absorber}. By~\eqref{eq:masscons}, the sum of net impacts across positions plus the change in $\sum_i D_{\text{pool},i} p_i$ is zero over any window. A non-trivial donor/absorber partition (at least one strictly positive and at least one strictly negative cumulative impact) follows under heterogeneous rebalance arrival rates and ranges across positions, though it is not forced by~\eqref{eq:masscons} alone. Lemma~\ref{lem:partition} (Appendix~\ref{app:extinctionproof}) gives a sufficient condition, and the V9 evidence of Section~\ref{sec:framework_predictions} verifies the partition empirically in eight of eight multi-pool portfolios.
+
+Proof in Appendix~\ref{app:extinctionproof}; V9 verification in Section~\ref{sec:framework_predictions}.
+
+\section{Propagation of chaos}\label{sec:chaos}
+
+\paragraph{Scope.} The Master Equation of Section~\ref{sec:masterequation} (Theorem~\ref{thm:binding}) and the multi-pool consequences of Section~\ref{sec:multipool} (Proposition~\ref{thm:connector}, Theorem~\ref{thm:extinction}) are topology-agnostic: they apply to any portfolio graph formed by the depositor's positions, including triangles, double hubs, ladders, and the mixed topologies observed in the V9 dataset of Section~\ref{sec:empirical}. The closed-form per-event jump, together with the mass-conservation and sign-keyed-correlation results above, does not depend on any particular wiring of the portfolio. This section turns to a stronger but topology-specific statement. In the homogeneous hub-spoke case, the stationary spoke marginals of the dust ledger admit a closed-form asymptotic law as $N$ grows, via propagation of chaos. This is a distributional refinement rather than a precondition. The empirical fits on V9 portfolios (Section~\ref{sec:empirical}) and the Foundry verification on cross-pool topologies (Section~\ref{sec:foundry}) rest on the topology-agnostic Master Equation; the present theorem concerns the additional structure that appears when the portfolio graph is itself a star.
+
+The framework invoked here belongs to the classical propagation-of-chaos line of Sznitman\cite{sznitman1991} and its mean-field descendants\cite{carmona2018,cardaliaguet2019}. Its more familiar applications in finance concern continuous-time interacting-agent models with latent aggregate state, where the mean-field coupling is part of the modelling apparatus and must be justified at scale. The setting here is rather different. The aggregate state (the dust ledger $D_{\text{pool}}(t)$) is the contract's own depositor-keyed dust mapping; the coupling is supplied by the architecture rather than posited by the model; and the per-event jump kernel is the closed-form Theorem~\ref{thm:binding} rather than a fitted mechanism. In that sense, the kernel is exact and on-chain observable at every event. Only the asymptotic-$N$ decoupling is a limit statement.
+
+Under the swap routing of Section~\ref{sec:swap}, the perfect-routing target preserves position liquidity $L$ exactly. Under slippage, $L$ drifts on a slower scale, and the per-event change in $L$ is mean-zero conditional on the pre-event state. The remainder of this section works under the following assumption block.
+
+\paragraph{Assumptions.}
+\begin{enumerate}[leftmargin=*,label=(A\arabic*$'$)]
+\item Slippage is i.i.d.\ from a law $\nu_\varepsilon$ on $[-K_{\min}, K_{\max}]$ with $K_{\min} < 1$, $K_{\max} < \infty$, finite second moment $\sigma_{\text{slip}}^2 := \mathrm{Var}(\varepsilon)$, and density bounded away from zero on a neighbourhood of the origin. The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}$ collapses the swap-correction noise to this single one-dimensional residual; no symmetry, zero-mean, or Gaussianity is assumed.
+\setcounter{enumi}{1}
+\item[(A2)] Boundary trigger $\delta \sim \mathrm{Unif}(\{\pm w/2\})$ at each event, independent of past state and slippage.
+\item[(A3)] Homogeneous exchangeable spokes: parameters $(L, w, \lambda)$ and $\nu_\varepsilon$ shared. The heterogeneous case is treated as Conjecture~\ref{cor:hetero}.
+\item[(A4)] There exist $C, \rho \in (0, 1)$ independent of $N$ such that the hub-marginal chain in stationary spoke environment mixes in total variation at rate $C\rho^n$ after $n$ hub events.
+\item[(A5)] The kernel induced by Theorem~\ref{thm:binding} is TV-Lipschitz in $(H, B_k)$ with constant $\Lambda = K_{\max}\,(1 + s_h^2)/2$, with $s_h^2$ the swap-routing slope in the human-scaled token frame.
+\end{enumerate}
+Of these, (A1$'$)--(A3) and (A5) are model definitions or directly verifiable from~\eqref{eq:Khom} below; (A4) is the load-bearing limit-theory assumption. The chain on $D_{\text{pool}}(t)$ admits a unique stationary law $\pi$ and is positive recurrent under (A1$'$); rigorous Foster-function constructions are sketched in Appendix~\ref{app:chaosproof}. The V9 evidence of Section~\ref{sec:framework_predictions} is consistent with these assumptions at production scale.
+
+\subsection{Hub-spoke topology and statement of the limit}\label{sec:chaos_statement}
+
+Consider the canonical hub-spoke topology, with one degree-$N$ hub token $T_0$ shared across $N$ pools and each pool contributing one degree-$1$ spoke token $T_k$ (Fig.~\ref{fig:hubspoke}). Write $H := D_{\text{pool},T_0}$ and $B_k := D_{\text{pool},T_k}$ for the hub and spoke-$k$ components of the dust ledger throughout this section and Appendix~\ref{app:chaosproof}. The hub is updated at rate $N\lambda$ and each spoke at rate $\lambda$, so the inter-event-rate ratio is $\tau_{\text{hub}}/\tau_{\text{spoke}} = 1/N$. This rate-ratio identity is consistent with Proposition~2 of \cite{pi2026convexity} (residence time inversely proportional to degree) on homogeneous-rate hub-spoke graphs; the Group~B hub-spoke pattern of \cite{ryan2026siphon} \S5.4 is the same special case at finite $N$.
+
+\begin{figure}[H]
+\centering
+\definecolor{nodeteal}{HTML}{1A535C}
+\definecolor{nodetealfill}{HTML}{D8EAE7}
+\definecolor{nodecrimson}{HTML}{C0392B}
+\definecolor{nodecrimsonfill}{HTML}{F5E0DD}
+\definecolor{nodegray}{HTML}{707070}
+\definecolor{nodegrayfill}{HTML}{ECECEC}
+\begin{tikzpicture}[
+    >=latex,
+    font=\small,
+    hub/.style       = {circle, draw=nodeteal, line width=0.9pt,
+                        fill=nodetealfill, minimum size=1.7cm, align=center, inner sep=1pt,
+                        drop shadow={shadow xshift=0.7pt, shadow yshift=-0.7pt, opacity=0.2}},
+    spoke/.style     = {circle, draw=nodecrimson!80, line width=0.9pt,
+                        fill=nodecrimsonfill, minimum size=1.5cm, align=center, inner sep=1pt,
+                        drop shadow={shadow xshift=0.7pt, shadow yshift=-0.7pt, opacity=0.2}},
+    pool/.style      = {rectangle, draw=nodegray, line width=0.6pt,
+                        fill=nodegrayfill, minimum width=0.95cm, minimum height=0.65cm, align=center,
+                        font=\footnotesize, inner sep=2pt,
+                        drop shadow={shadow xshift=0.4pt, shadow yshift=-0.4pt, opacity=0.12}},
+    edge/.style      = {draw=black!55, line width=0.6pt},
+]
+\node[hub] (hub) at (0,0) {$T_0$};
+\node[pool] (p1) at (-3.2, 1.6) {$P_1$};
+\node[pool] (p2) at (-1.6, 2.4) {$P_2$};
+\node[pool] (p3) at ( 1.6, 2.4) {$P_3$};
+\node[pool] (pN) at ( 3.2, 1.6) {$P_N$};
+\node[spoke] (s1) at (-4.4, 3.2) {$T_1$};
+\node[spoke] (s2) at (-2.0, 4.0) {$T_2$};
+\node[spoke] (s3) at ( 2.0, 4.0) {$T_3$};
+\node[spoke] (sN) at ( 4.4, 3.2) {$T_N$};
+\node[font=\Large] at (0, 2.8) {$\cdots$};
+\foreach \p/\s in {p1/s1, p2/s2, p3/s3, pN/sN} {
+    \draw[edge] (hub) -- (\p);
+    \draw[edge] (\p) -- (\s);
+}
+\end{tikzpicture}
+\caption{Canonical hub-spoke topology with $N$ spokes.}
+\label{fig:hubspoke}
+\end{figure}
+
+In this topology the hub is touched by every rebalance while each spoke is touched only by its own. As $N$ grows, the hub mixes faster than any single spoke sees individual updates, and the marginal kernel governing each spoke decouples from the others; this is the standard mean-field setup. The kernel induced by Theorem~\ref{thm:binding} on this topology is, to leading order in $w$,
+\begin{equation}\label{eq:Khom}
+\widetilde{\mathcal{K}}_w\bigl((H, B_k),\,\cdot\,\bigr) \;=\;
+\begin{cases}
+B_k' = 0,\ H' = |Lw + B_k - H|\,|\varepsilon|\,(1+s_h^2)/2 & \text{if } (Lw + B_k - H)\,\varepsilon < 0, \\
+H' = 0,\ B_k' = |Lw + B_k - H|\,|\varepsilon|\,(1+s_h^2)/2 & \text{otherwise.}
+\end{cases}
+\end{equation}
+The factor $s_h^2$ is the swap-routing slope in the human-scaled token frame, equal to $1$ to leading order in the homogeneous symmetric regime. The asymptotic-$N$ limit of this kernel admits two complementary statements: a structural factorisation result (Proposition~\ref{thm:chaos2A}) and a closed-form one-spoke marginal (Proposition~\ref{thm:chaos2B}), with the half-normal mixture obtained for symmetric Gaussian slippage as a corollary.
+
+\begin{proposition}[Conditional propagation of chaos]\label{thm:chaos2A}
+Under (A1$'$)--(A5), let $\pi^N$ denote the unique stationary law of $X^N = (H, B_1, \ldots, B_N)$ on $\mathbb{R}^{N+1}_{\geq 0}$, and $\pi^N_{(m)}$ its $m$-spoke marginal for any fixed $m \geq 1$. Then
+\[
+\pi^N_{(m)} \;\xrightarrow[N \to \infty]{w}\; \mu^{\otimes m},
+\]
+where $\mu$ is the stationary law of the limiting one-spoke chain $\bar B$ driven by i.i.d.\ hub samples $\bar H \sim \pi_H$, and $(\mu, \pi_H)$ is the unique fixed point of the McKean--Vlasov system associated with the kernel~\eqref{eq:Khom}.
+\end{proposition}
+
+\begin{proposition}[Closed-form one-spoke marginal]\label{thm:chaos2B}
+Under (A1$'$)--(A5) and the small-$w$ regime in which typical $|H|, |B| \ll Lw$ in stationarity (which holds whenever $\sigma_{\text{slip}} \ll 1$, since $H, B = O(Lw\,\sigma_{\text{slip}})$), the limit $\mu$ from Proposition~\ref{thm:chaos2A} admits the binary atom-mixture form
+\begin{equation}\label{eq:chaoslimit}
+\mu(db) \;=\; q\,\delta_0(db) \;+\; (1 - q)\,\rho_+(db),
+\end{equation}
+where $q := \mathbb{P}_{\nu_\varepsilon}(\varepsilon < 0)$ is the spoke-binding probability in the typical-state regime, and $\rho_+$ is the law of $\tfrac{Lw}{2}\,|\varepsilon|\,(1 + s_h^2)$ conditional on $\varepsilon \geq 0$, both to leading order in $w$.
+\end{proposition}
+
+\begin{corollary}[Half-normal mixture, symmetric Gaussian case]\label{cor:halfnormal}
+If $\nu_\varepsilon$ is symmetric mean-zero Gaussian with standard deviation $\sigma_{\text{slip}}$, then $q = 1/2$ and $\rho_+ = \mathrm{HN}(\beta)$ is half-normal with scale
+\[
+\beta \;=\; \frac{Lw\,\sigma_{\text{slip}}\,(1 + s_h^2)}{2} \;\xrightarrow{s \to 1,\ d_0 = d_1}\; Lw\,\sigma_{\text{slip}},
+\]
+giving the closed form $\mu(db) = \tfrac{1}{2}\delta_0(db) + \tfrac{1}{2}\,\mathrm{HN}(b;\beta)\,db$ with explicit moments
+\[
+\mathbb{P}\bigl(D_{\text{pool},T_k} = 0\bigr) = \tfrac{1}{2}, \qquad \mathbb{E}\bigl[D_{\text{pool},T_k} \mid D_{\text{pool},T_k} > 0\bigr] = \beta\sqrt{\tfrac{2}{\pi}}.
+\]
+\end{corollary}
+
+The decoupling argument is a leading-order mean-field calculation; the rate of convergence in $N$ at fixed $w$ is conditional on (A4). The $O(w)$ correction to the leading-order kernel preserves the atom mass and shifts the slack-side scale by $O(w)$. Numerical verification of Corollary~\ref{cor:halfnormal} across $N \in \{10, 50, 100, 200, 500\}$ is in Section~\ref{sec:chaos_numerical}; verification of Proposition~\ref{thm:chaos2B} under V9-realistic asymmetric heavy-tailed slippage is in Section~\ref{sec:framework_predictions}.
+
+The hub does not converge to the same limit as the spokes. It retains autocorrelation through its per-rebalance updates and exhibits a heavier right tail. The spokes, not the hub, are the propagation-of-chaos limit objects, since between consecutive spoke events the hub mixes through $\sim N$ other updates, so each spoke effectively sees a fresh hub sample. Proof in Appendix~\ref{app:chaosproof}.
+
+\subsection{The dust ledger as a loss-network analogue}\label{sec:lossnet_analogue}
+
+The dust ledger is a discovered, rather than designed, instance of a mathematical structure more familiar in queueing theory and statistical mechanics. The closest existing technical analogue is the propagation-of-chaos analysis of Graham and M\'el\'eard\cite{graham1993} for fully connected loss networks with alternate routing. The point of contact is summarised in Table~\ref{tab:lossnet_analogue}.
+
+\begin{table}[H]
+\centering
+\caption{Correspondence between Graham-M\'el\'eard's loss network with alternate routing and the dust-ledger framework of this paper.}
+\label{tab:lossnet_analogue}
+\begin{tabular}{@{}p{6.0cm}p{6.5cm}@{}}
+\toprule
+Graham-M\'el\'eard~\cite{graham1993} & Dust ledger (this paper) \\
+\midrule
+Node & Token $T_i$ \\
+Link (edge between two nodes) & Pool $P_k$ (pair $(T_a, T_b)$) \\
+Call arrival on link, Poisson rate $\nu$ & Rebalance event on pool, exogenous Poisson rate $\lambda_k$ \\
+Capacity check (link full or not) & LP-min binding side (Theorem~\ref{thm:binding}) \\
+Alternate routing to a third node when link saturates & Cross-pool absorption via shared depositor-keyed dust ledger (eq.~\eqref{eq:master}) \\
+Non-exchangeable in pair structure (couples sharing a node $\neq$ disjoint couples) & Non-exchangeable in pair structure (positions sharing a token $\neq$ disjoint positions) \\
+Fully connected $n$-node graph $\Rightarrow$ $\binom{n}{2}$ links & Bipartite portfolio graph $G$, projected onto tokens \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent The correspondence is nevertheless only partial. Graham-M\'el\'eard's calls have exponential durations after which channels are released; the dust ledger has no analogue of call expiry, and dust persists until consumed by a subsequent mint. Their state space is integer-valued, with channel counts in $\{0,1,\ldots,C\}$, whereas the dust ledger evolves on the continuous state space $\mathbb{R}^n_{\geq 0}$. Lifting Graham-M\'el\'eard's variation-norm convergence theorem to the present kernel remains an open technical step, as noted in Appendix~\ref{app:chaosproof}. Modern propagation-of-chaos methods for jump systems with quantitative rates~\cite{chaintron2022,andreis2018} provide the more natural contemporary toolkit, subject to the corresponding Lipschitz conditions on the kernel.
+
+\subsection{Numerical verification}\label{sec:chaos_numerical}
+
+The Master Equation simulator described in Appendix~\ref{app:methodology} implements the homogeneous hub-spoke dynamics directly. Tables~\ref{tab:chaosverif}--\ref{tab:chaossweep} verify Corollary~\ref{cor:halfnormal} (the symmetric-Gaussian special case) at $\sigma_{\text{slip}} = 0.01$. At $N = 200$, $L = 1$, $w = 0.01$, a run of $5 \times 10^6$ rebalance events confirms the closed form across all moments and quantile points to within 1--4\%. At these parameters,
+\[
+\beta = \frac{0.01}{\sqrt{2}} \approx 7.07 \times 10^{-3}
+\]
+in the simulator's homogeneous symmetric convention, so the closed form gives
+\[
+\mathbb{E}[b \mid b > 0] = \beta\sqrt{\tfrac{2}{\pi}} \approx 5.64 \times 10^{-5},
+\]
+while the simulator returns $5.71 \times 10^{-5}$. The general atom-mixture form (Proposition~\ref{thm:chaos2B}) under V9-realistic asymmetric heavy-tailed slippage is verified separately in Section~\ref{sec:framework_predictions}; the simulator's $\mathbb{P}(b = 0)$ matches the conditional $\mathbb{P}_{\nu_\varepsilon}(\varepsilon < 0)$ prediction to within $0.001$ at the kernel level under each conditional bootstrap of V9 events.
+
+\begin{table}[H]
+\centering
+\caption{Verification of Corollary~\ref{cor:halfnormal} for the spoke stationary distribution at $N=200$ ($5 \times 10^6$ samples), under symmetric Gaussian slippage of standard deviation $\sigma_{\text{slip}} = 0.01$.}
+\label{tab:chaosverif}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Quantity & Empirical & Closed form & Ratio \\
+\midrule
+$\mathbb{P}(b = 0)$                              & 0.4998 & 0.5000 & 1.000 \\
+$\mathbb{E}[b \mid b > 0]$                       & $5.71 \times 10^{-5}$ & $5.64 \times 10^{-5}$ & 1.012 \\
+$\mathrm{Var}(b \mid b > 0)$                     & $2.01 \times 10^{-9}$ & $1.82 \times 10^{-9}$ & 1.108 \\
+CDF $q = 0.10$                                   & $9.23 \times 10^{-6}$ & $8.89 \times 10^{-6}$ & 1.04 \\
+CDF $q = 0.25$                                   & $2.24 \times 10^{-5}$ & $2.25 \times 10^{-5}$ & 0.99 \\
+CDF $q = 0.50$                                   & $4.66 \times 10^{-5}$ & $4.77 \times 10^{-5}$ & 0.98 \\
+CDF $q = 0.75$                                   & $8.21 \times 10^{-5}$ & $8.13 \times 10^{-5}$ & 1.01 \\
+CDF $q = 0.90$                                   & $1.17 \times 10^{-4}$ & $1.16 \times 10^{-4}$ & 1.01 \\
+$\mathrm{corr}(D_{\text{pool},T_1}, D_{\text{pool},T_2})$ & $-0.027$ & 0 & n/a \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Rate-of-approach sweep across $N$.}
+To check that the asymptotic decoupling sets in at the rate suggested by the leading-order argument, the homogeneous hub-spoke chain is re-run at
+\[
+N \in \{10, 50, 100, 200, 500\},
+\]
+with parameters fixed at $L = 1$, $w = 0.01$, and $\sigma_{\text{slip}} = 0.01$, and with $10^5$ post-burn-in events per spoke. The simulator implements the full finite-$N$ coupling, drawing the slack-side leftover at the rebalance of pool $k$ as
+\[
+|Lw + b_k - h| \cdot |\varepsilon_1 + \varepsilon_2| / 2
+\]
+rather than from the leading-order limit kernel. Any visible $N$-dependence therefore reflects the correction terms omitted by the leading-order argument.
+
+\begin{table}[H]
+\centering
+\caption{Rate-of-approach sweep against Corollary~\ref{cor:halfnormal} (the leading-order half-normal mixture); $|\rho|$ medians taken across all $\binom{N}{2}$ spoke pairs.}
+\label{tab:chaossweep}
+\begin{tabular}{@{}rrrrrr@{}}
+\toprule
+$N$ & $\mathbb{P}(b=0)$ & error vs $1/2$ & $\mathbb{E}[b \mid b>0]$ & rel.\ error & median $|\rho|$ \\
+\midrule
+10  & 0.5003 & $3.3 \times 10^{-4}$ & $5.641 \times 10^{-5}$ & $0.01\%$ & $0.0021$ \\
+50  & 0.5001 & $5.5 \times 10^{-5}$ & $5.644 \times 10^{-5}$ & $0.03\%$ & $0.0022$ \\
+100 & 0.5000 & $4.2 \times 10^{-6}$ & $5.643 \times 10^{-5}$ & $0.02\%$ & $0.0021$ \\
+200 & 0.5001 & $8.9 \times 10^{-5}$ & $5.644 \times 10^{-5}$ & $0.03\%$ & $0.0021$ \\
+500 & 0.4999 & $8.1 \times 10^{-5}$ & $5.643 \times 10^{-5}$ & $0.01\%$ & $0.0028$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The atom $\mathbb{P}(b = 0) = 1/2$ and the slack-side scale
+\[
+\mathbb{E}[b \mid b > 0] = \beta\sqrt{\tfrac{2}{\pi}}
+\]
+are recovered to within Monte Carlo noise across two orders of magnitude in $N$, with median pairwise spoke correlation remaining at the noise floor throughout. At the homogeneous parameters used here, the leading-order ansatz $|Lw + b_k - h| \approx Lw$ is already accurate to relative $O(\sigma_{\text{slip}})$, so the $1$--$4\%$ gap in Table~\ref{tab:chaosverif} between simulator and closed form is best understood as a fixed higher-order kernel correction (range half-width $w$ and swap-locus discreteness) rather than a finite-$N$ artefact. A rigorous rate-of-convergence statement \`a la \cite{andreis2018} for this kernel class remains open, as does identifying a regime in which finite-$N$ departures from the leading-order limit become numerically visible, for example under heterogeneous spokes or larger $\sigma_{\text{slip}}$.
+
+\subsection{Heterogeneous spokes and finite $N$}\label{sec:chaos_hetero}
+
+\begin{conjecture}[Heterogeneous spokes]\label{cor:hetero}
+Drop the homogeneity assumption, and let spoke $k$ have its own parameters $(L_k, w_k, \sigma_{\text{slip},k}, \lambda_k)$ and slippage law $\nu_{\varepsilon,k}$. If conditions analogous to (A1$'$)--(A5) hold on a spoke-by-spoke basis, then the factorisation structure of Proposition~\ref{thm:chaos2A} and the leading-order atom-mixture structure of Proposition~\ref{thm:chaos2B} are conjectured to persist in the following weak form: distinct spokes become asymptotically independent, and each spoke admits a stationary law of the form
+\[
+\mu_k = q_k\,\delta_0 + (1 - q_k)\,\rho_{+,k}
+\]
+for some $q_k \in [0,1]$, with slack-side spoke leftover scaling to leading order as
+\[
+\frac{L_k w_k}{2}\,|\varepsilon_k|\,(1 + s_h^2).
+\]
+No closed-form joint stationary law is claimed under arbitrary heterogeneity.
+\end{conjecture}
+
+Empirical V9 evidence (Section~\ref{sec:framework_predictions}) is consistent with the conjecture's pairwise-decoupling claim, but the observed per-spoke variation in $\mathbb{P}(D_{\text{pool},T_k} = 0)$ over the range $[0, 0.59]$ across 32 V9 token-portfolio pairs indicates a heterogeneous production regime lying beyond this clean per-spoke form. That regime is treated as an open extension problem in Section~\ref{sec:future}.
+
+\paragraph{Numerical verification under heterogeneity.}
+The simulator-level claims of Conjecture~\ref{cor:hetero} (atom mass, leading-order scaling, and pairwise decoupling under symmetric-Gaussian slippage) are tested by re-running the chain with per-spoke parameters drawn log-uniformly:
+\[
+L_k \in [0.5, 2], \qquad w_k \in [0.005, 0.05], \qquad \sigma_{\text{slip},k} \in [0.005, 0.05], \qquad \lambda_k \in [0.5, 2].
+\]
+This produces a $4{-}10\times$ spread on each parameter and a $\sim 100\times$ spread in $\beta_k$ across spokes. Pool selection at each event is weighted by $\lambda_k / \sum_j \lambda_j$, matching the Poisson superposition of independent rebalance streams. Table~\ref{tab:chaoshetero} shows that, for every $N$ from $10$ up to $500$, the half-mass atom holds per spoke (median $\mathbb{P}(b_k = 0)$ within $10^{-3}$ of $0.5$), the leading-order leftover scaling holds per spoke (median relative error on $\mathbb{E}[b_k \mid b_k > 0]$ in the range $0.5{-}0.8\%$, with p90 below $2\%$), and pairwise spoke-spoke correlations remain at the noise floor (median $|\rho|$ below $0.005$, p95 below $0.012$).
+
+\begin{table}[H]
+\centering
+\caption{Heterogeneous-spoke verification of Conjecture~\ref{cor:hetero}; each row uses fresh log-uniform parameter draws.}
+\label{tab:chaoshetero}
+\begin{tabular}{@{}rrrrrrrr@{}}
+\toprule
+$N$ & med $\mathbb{P}(b_k = 0)$ & max $|\mathbb{P}-1/2|$ & med rel err & p90 & max & med $|\rho|$ & p95 $|\rho|$ \\
+\midrule
+10  & 0.4994 & 0.0049 & $0.55\%$ & $1.06\%$ & $1.81\%$ & $0.0027$ & $0.0068$ \\
+50  & 0.4999 & 0.0038 & $0.76\%$ & $1.43\%$ & $2.62\%$ & $0.0028$ & $0.0087$ \\
+100 & 0.4998 & 0.0050 & $0.50\%$ & $1.55\%$ & $4.31\%$ & $0.0033$ & $0.0094$ \\
+200 & 0.4996 & 0.0057 & $0.55\%$ & $1.41\%$ & $3.21\%$ & $0.0032$ & $0.0092$ \\
+500 & 0.4999 & 0.0073 & $0.67\%$ & $1.90\%$ & $4.47\%$ & $0.0041$ & $0.0118$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These simulator-level results support the conjecture's limited claims across two orders of magnitude in $N$ and across a heterogeneity range comparable to that observed in production V9 portfolios. They do not, however, yield a closed-form expression for the joint stationary law under arbitrary heterogeneity. Production V9 portfolios have $N \in \{2,\ldots,8\}$, and the per-spoke atom-mass variation observed there indicates a heterogeneous production regime outside the conjecture's clean per-spoke form. Section~\ref{sec:framework_predictions} therefore tests the pairwise-decoupling claim directly on operator data, while Section~\ref{sec:future} treats the residual per-spoke distributional gap as an open extension problem.
+
+\section{Empirical validation}\label{sec:empirical}
+
+The framework is validated across the four PM contracts in the observed architectural class on Aerodrome Slipstream (Base): PM~V6 (active 1--5 March 2026, where the residual was originally observed), PM~V7 (6--13 March, following post-exploit security hardening), PM~V8 (13--21 March, introducing multi-portfolio support), and PM~V9 (21 March onward, the current deployment). V9 is indexed natively from chain into a DuckDB lake, whereas V6, V7, and V8 are reconstructed from per-version diffusion logs. In conservation form, the Master Equation combines the rebalance transaction's Pool.Burn, Pool.Swap, and Pool.Mint amounts with the standing-balance state obtained by chronological \texttt{DustCredited} cumulation, and compares the result with the next \texttt{DustCredited} emitted at the rebalance. Contract addresses, indexer plumbing, and the supporting audits are given in Appendix~\ref{app:methodology}; the reconstructed credit history agrees with the on-chain \texttt{dustBalance} mapping at 99.83\% across 16{,}388 comparison rows.
+
+\subsection{Cross-version replication: V6 to V9}\label{sec:cross_version}
+
+The same equation holds on every contract version back to where the residual was first observed. Table~\ref{tab:cross_version} reports the conservation-form result on each of the four contracts in the architectural class.
+
+\begin{table}[H]
+\centering
+\caption{Master Equation conservation form, V6$\to$V9.}
+\label{tab:cross_version}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Version & Active window & Groups & Events & Median ratio & Within-$2\times$ \\
+\midrule
+PM~V6   & 2026-03-01 to 03-05 & 5  & $\sim\!738$    & 1.0000 uniformly & 91.2--100.0\% \\
+PM~V7   & 2026-03-06 to 03-13 & 5  & $\sim\!3{,}600$  & 1.0000 uniformly & 98.2--100.0\% \\
+PM~V8   & 2026-03-13 to 03-21 & 13 & $\sim\!22{,}000$ & 1.0000 uniformly & 97.8--100.0\% \\
+PM~V9   & 2026-03-21 onward    & 8  & $\sim\!8{,}200$  & 1.0000 uniformly & 99.8--100.0\% \\
+\midrule
+Total   & 23-day span & 31 & $\sim\!34{,}500$ & 1.0000 across $31/31$ & 91.2--100.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The conservation-form match is exact in median terms across the entire version history. The median ratio is 1.0000 in all 31 groups, and the within-$2\times$ rate is $\geq 97.8\%$ on V7--V9 and $\geq 91.2\%$ on V6, whose lower floor reflects the retroactive diffusion-log reconstruction, since contemporaneous engine logging begins only at V7. The V6 to V7 security hardening, V7 to V8 schema extension, and V8 to V9 AERO-leak fix each touched substantial portions of the contract code, yet the dust-ledger dynamics obey the same equation throughout. The cross-version evidence is therefore consistent with the Master Equation governing every observed contract version in this architectural class, though the four contracts still share one operator (Section~\ref{sec:limitations}), so operator-independent invariance remains open. Fig.~\ref{fig:perevent_scatter} anchors the kernel structure of Theorem~\ref{thm:binding} on the swap-corrected branch independently of the conservation form, by comparing the per-event leading-order prediction to the on-chain dust credit on each of $804$ substantial-swap V9 events.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\textwidth]{fig_per_event_scatter.pdf}
+\caption{Per-event kernel prediction of slack-side dust credit versus on-chain emission, on $804$ V9 substantial-swap events. Geomedian predicted/actual $= 0.9999$; $77.6\%$ within a factor of 2 of the diagonal.}
+\label{fig:perevent_scatter}
+\end{figure}
+
+\subsection{V9 per-portfolio detail and predictive-form lift}\label{sec:results}
+
+The V9 row of Table~\ref{tab:cross_version} is broken down by portfolio in Table~\ref{tab:results}. The depositor's on-chain universe contains 13 active portfolios, of which eight have a sufficient sample of events together with the diffusion-log inputs and pool coverage required for the prediction.
+
+\begin{table}[H]
+\centering
+\caption{Master Equation conservation form on V9, per portfolio.}
+\label{tab:results}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Portfolio & Events & Binding & Within $2\times$ & Within 10\% & Median & Geomean \\
+\midrule
+A & 2{,}332 & 100.0\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+B & 2{,}556 & 99.9\% & 99.9\% & 99.8\% & 1.0000 & 1.00 \\
+C & 1{,}060 & 99.5\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+D & 559     & 100.0\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+E & 504     & 99.2\% & 99.8\% & 99.8\% & 1.0000 & 1.00 \\
+F & 443     & 99.8\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+G & 381     & 100.0\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+H & 345     & 99.7\% & 100.0\% & 100.0\% & 1.0000 & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across $8{,}180$ V9 events, the within-10\% rate (defined as $|\log_{10}(\text{predicted}/\text{actual})| < \log_{10}(1.1)$) is 99.8--100\% on every portfolio. The four conservation inputs are read from distinct on-chain events, and their algebraic combination matches the next \texttt{DustCredited} exactly as a closed-form identity would predict. The same equation reproduces swap-free and swap-present events alike.
+
+\paragraph{Predictive form.}\label{sec:lift}
+The conservation form above reads its mint inputs directly from the on-chain Pool.Mint event. The predictive form of Theorem~\ref{thm:binding} instead derives the mint inputs from the LP solve at the engine-detected post-swap currentTick, and derives $(x_w, y_w)$ from the engine's \texttt{preValue} inverted at the engine-detected pre-swap currentTick. Table~\ref{tab:modelift} compares the two forms.
+
+\begin{table}[H]
+\centering
+\caption{Theorem~\ref{thm:binding} as forward predictor (LP-solve column) versus mass-conservation check (conservation column).}
+\label{tab:modelift}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+          &        & \multicolumn{2}{c}{Within $2\times$} & \multicolumn{2}{c}{Geomean} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Portfolio & Events & LP-solve & Conservation & LP-solve & Conservation \\
+\midrule
+A & 2{,}332 & 80.2\% & 100.0\% & 1.26 & 1.00 \\
+B & 2{,}556 & 65.4\% & 99.9\%  & 1.39 & 1.00 \\
+C & 1{,}060 & 62.2\% & 100.0\% & 1.55 & 1.00 \\
+D & 559     & 73.8\% & 100.0\% & 2.52 & 1.00 \\
+E & 504     & 57.3\% & 99.8\%  & 1.37 & 1.00 \\
+F & 443     & 80.2\% & 100.0\% & 1.78 & 1.00 \\
+G & 381     & 71.8\% & 100.0\% & 1.43 & 1.00 \\
+H & 345     & 96.7\% & 100.0\% & 1.04 & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The accuracy of the predictive form is capped by engine-tick observability. On narrow-range stable pools, the on-chain tick can drift between firing and burn, shifting $(x_w, y_w)$ in ways the engine snapshot does not capture. In that regime, the predictive form recovers the residual within a factor of two on 57--97\% of events, whereas the conservation form (which reads Pool.Burn directly from chain) is unaffected ($\geq 99.8\%$).
+
+\subsection{Framework predictions verified on V9}\label{sec:framework_predictions}
+
+Beyond the per-event conservation check, Proposition~\ref{thm:connector}, Theorem~\ref{thm:extinction}, and Propositions~\ref{thm:chaos2A}--\ref{thm:chaos2B} make distinct predictions about V9 dust dynamics; each is verified on V9 chain data below.
+
+\paragraph{Connector Rule (Proposition~\ref{thm:connector}).}
+Per-pool Spearman correlations between signed normalised displacement and signed connector-side dust quantity are computed across the eight portfolios containing a multi-pool connector, giving 37 pool-portfolio groups in Table~\ref{tab:connector}, a $3.7\!\times$ increase over the 10 groups reported in \S5.2 of the prior paper. Sixteen pools (43\%) attain $|\rho| \geq 0.5$, and the sign separates cleanly by connector position: the $T_0$-connector subset has median $+0.42$, while the $T_1$-connector subset has median $-0.44$. The original empirical sample, which ranged from $-0.56$ to $-0.98$ across 10 groups, lay entirely in the $T_1$-connector subset; the V9 evidence now covers both connector positions and recovers the predicted sign in each.
+
+\begin{table}[H]
+\centering
+\caption{Connector Rule Spearman $\rho$ summary, V9.}
+\label{tab:connector}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Connector position & Pools & Median $\rho$ & Range \\
+\midrule
+$T_0$ (token0)     & 20 & $+0.42$ & $[+0.32, +0.67]$ for $|\rho| \geq 0.3$ \\
+$T_1$ (token1)     & 17 & $-0.44$ & $[-0.83, -0.50]$ for $|\rho| \geq 0.3$ \\
+\midrule
+All pools           & 37 & n/a & $[-0.83, +0.67]$ overall \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Donor/absorber decomposition (Theorem~\ref{thm:extinction}).}
+Every multi-pool V9 portfolio observed under $S = 0$ partitions into net donors and net absorbers over the observation window, while preserving the event-level identity of Theorem~\ref{thm:extinction}. Table~\ref{tab:donor_absorber} reports the partition: all 8 multi-pool portfolios contain both donors and absorbers, while the two single-pool portfolios (D and J) are degenerate. Portfolio B provides the canonical hub-spoke example at portfolio scale, with a perfect $4{:}4$ donor-absorber split and near-zero net total ($+\$1{,}285$); dust moves between positions sharing the same depositor-keyed dust mapping while the aggregate remains approximately balanced over the window. By contrast, Portfolio H records a net total of $-\$7{,}697$, indicating that donor and absorber flows need not offset exactly over a finite observation horizon even when the event-level conservation law holds.
+
+\begin{table}[H]
+\centering
+\caption{Per-portfolio donor/absorber decomposition over the V9 window.}
+\label{tab:donor_absorber}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Portfolio  & Pools & Donors & Absorbers & Neutrals & Net total (USD) \\
+\midrule
+A &  6 & 0 & 5 & 1 & $+17{,}783$ \\
+B &  8 & 4 & 4 & 0 & $+1{,}285$ \\
+C &  8 & 2 & 4 & 2 & $+13{,}003$ \\
+D &  1 & 1 & 0 & 0 & $-146$ \\
+E &  5 & 3 & 2 & 0 & $+2{,}497$ \\
+F &  6 & 2 & 4 & 0 & $+24{,}004$ \\
+G &  6 & 4 & 1 & 1 & $+847$ \\
+H &  6 & 3 & 2 & 1 & $-7{,}697$ \\
+I &  2 & 1 & 1 & 0 & $+14{,}724$ \\
+J &  1 & 0 & 1 & 0 & $+63{,}443$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Asymptotic spoke independence (Proposition~\ref{thm:chaos2A}).}
+The propagation-of-chaos prediction that distinct spokes become asymptotically independent remains empirically testable on V9, even at finite $N$. Across the eight portfolios there are 12 degree-1 token pairs, that is, pairs in which each token appears in exactly one pool. Table~\ref{tab:chaos_v9} reports the pairwise correlations of their standing-balance trajectories: median $|\rho| = 0.020$ and maximum $0.14$. Portfolio C alone contributes six pairs with $|\rho| \leq 0.025$, with all four of its spokes effectively independent. The two largest correlations occur at the smallest $N$, in Portfolios H and I where $N \leq 4$, consistent with the $O(1/N)$ finite-$N$ correction discussed in Section~\ref{sec:chaos_hetero}.
+
+The factorisation diagnostic is also stable across slippage-law families. Bootstrap simulators driven by V9-realistic asymmetric heavy-tailed slippage reproduce the same noise-floor scaling
+\[
+|\rho| \cdot \sqrt{\mathrm{events}/N} \approx \mathrm{const}
+\]
+across $N \in \{100, \ldots, 10\,000\}$ under three independent conditional-bootstrap kernels (i.i.d.\ marginal, sign-conditional, magnitude-conditional), with max/min of the implied noise constant at most $1.34$ in each case.
+
+\paragraph{Atom-mixture closed form (Proposition~\ref{thm:chaos2B}).}
+The kernel-level prediction that the spoke marginal takes the binary atom-mixture form is supported at the simulator level under bootstrap from V9 events: the simulator's $\mathbb{P}(b = 0)$ matches the conditional prediction $\mathbb{P}_{\nu_\varepsilon}(\varepsilon < 0)$ to within $0.001$ across $N \in \{100, \ldots, 10\,000\}$ under both sign-conditional and magnitude-conditional bootstraps. The half-normal special case (Corollary~\ref{cor:halfnormal}) has, by contrast, only narrow empirical scope. Across 32 V9 token-portfolio pairs, three exhibit the half-mass atom
+\[
+\mathbb{P}\bigl(D_{\text{pool},T_k}(\tau^+) = 0\bigr) \in [0.40, 0.60]
+\]
+predicted by the symmetric-Gaussian Corollary, distributed across three distinct V9 portfolios; the remaining 29 spokes behave as persistent slack-side accumulators with $\mathbb{P}(b = 0)$ near zero. This per-spoke variation lies outside the homogeneous symmetric closure and is therefore treated, in Section~\ref{sec:future}, as an open extension problem rather than as a within-scope refinement of Proposition~\ref{thm:chaos2B}.
+
+\begin{table}[H]
+\centering
+\caption{Pairwise correlation between distinct spoke-token standing trajectories on V9 portfolios. Median $|\rho| = 0.020$, max $0.14$ across 12 pairs.}
+\label{tab:chaos_v9}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Portfolio & Spoke pair & $|\rho|$ & Sample size \\
+\midrule
+C & ZORA / BNKR & 0.0007 & 13{,}216 \\
+C & ZORA / DIEM & 0.0055 & 13{,}216 \\
+G & UP / MORPHO & 0.010 & 8{,}757 \\
+C & BNKR / DIEM & 0.018 & 13{,}216 \\
+E & cbBTC / deSPXA & 0.018 & 6{,}824 \\
+C & DIEM / VIRTUAL & 0.020 & 13{,}216 \\
+C & ZORA / VIRTUAL & 0.020 & 13{,}216 \\
+C & BNKR / VIRTUAL & 0.023 & 13{,}216 \\
+E & WETH / deSPXA & 0.0067 & 6{,}824 \\
+E & cbBTC / WETH & 0.052 & 6{,}824 \\
+H & CADC / COOKIE & 0.138 & 3{,}669 \\
+I & deSPXA / USDC & 0.139 & 1{,}314 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Contract-level verification}\label{sec:foundry}
+
+The cross-version replication of Section~\ref{sec:cross_version} is anchored in operational data. A complementary track verifies the closed-form predictions of Theorem~\ref{thm:binding}, Theorem~\ref{thm:extinction}, and Proposition~\ref{thm:connector} directly against unmodified V3 \texttt{NonfungiblePositionManager} contracts under controlled mint, rebalance, and withdraw flows. The full Foundry suite, including contract addresses and per-test residual tables, is given in Appendix~\ref{app:foundry}.
+
+On both DEXes exercised by the live fork tests, Aerodrome Slipstream and Uniswap V3, the predicted dust credit matches the emitted credit to within 1 wei (token0) and 1 raw unit (token1) on every event, including the swap-corrected and cross-pool cases. Theorem~\ref{thm:extinction}'s mass conservation under $S=0$ is reproduced bit-exactly across 200 randomised rebalances on the mock pool; Proposition~\ref{thm:connector}'s sign prediction holds in both connector-position configurations on a controlled hub-spoke graph.
+
+The two NFPMs are independently developed and differ in pool-key encoding (\texttt{tickSpacing} on Slipstream, \texttt{fee} on Uniswap V3). Bit-exact agreement across both is therefore consistent with the per-event jump being a property of the architectural class rather than of any particular DEX implementation.
+
+\section{Discussion}\label{sec:discussion}
+
+\subsection{What the framework subsumes}\label{sec:subsumes}
+
+The Master Equation~\eqref{eq:master} gathers several earlier results in the programme into a single dynamical law. In the swap-free single-pool case, its per-event jump recovers the geometric residual of \S3.2 of the prior paper; the iff vanishing condition of Theorem~1 there reappears here as the measure-zero ratio-preserving locus inside Theorem~\ref{thm:binding}. The single-pool corner $m=1$ then separates by swap regime: under non-zero $S$, it is the convergence-in-expectation regime of Theorem~2 there; under $S=0$, it is the geometric extinction of Theorem~3.
+
+The Connector Rule conjecture of \S3.5 is promoted here to Proposition~\ref{thm:connector} under explicit V3-mechanical assumptions, while the hub-spoke study of \S5.4 may now be read, in retrospect, as the empirical instance of the canonical hub-spoke case of Section~\ref{sec:chaos_statement}. The rate-ratio identity $\tau_{\text{hub}}/\tau_{\text{spoke}} = 1/N$ is likewise consistent with Proposition~2 of \cite{pi2026convexity} on homogeneous-rate hub-spoke graphs.
+
+\subsection{Architectural precondition}\label{sec:precondition}
+
+Stock NFPMs do not maintain a depositor-keyed dust mapping. The architectural-precondition fork test of \S7.1 of the prior paper confirms the absence of cross-position dust absorption on a stock NFPM, while Proposition~1 of \cite{pi2026convexity} gives the formal iff condition (token degree $\geq 2$ in the portfolio graph) for cross-pool circulation paths to exist. The four PM contracts examined here remain the full observed population of this architectural class.
+
+The mechanism studied here is therefore not a generic property of concentrated liquidity as such. It arises when the V3 mint geometry is coupled to a contract architecture that retains and recycles residual balances across positions. In that sense, the dust ledger is not merely an implementation detail but the hidden microstructural state through which the portfolio becomes dynamically coupled.
+
+\subsection{Limitations}\label{sec:limitations}
+
+The empirical anchor is single-operator and single-chain. The cross-version replication of Section~\ref{sec:cross_version} shows that the framework is not a peculiarity of any one contract version, but the four contracts still share an operator on Aerodrome Slipstream. Cross-operator replication on V9 is straightforward and remains to be carried out.
+
+The atom-mixture closed form of Proposition~\ref{thm:chaos2B} is exact at the kernel level under arbitrary $\nu_\varepsilon$ but the rate of convergence in $N$ is conditional on (A4); finite-$N$ corrections are visible at chain scale $N \leq 8$ in the V9 data. The half-normal special case (Corollary~\ref{cor:halfnormal}) has correspondingly narrow empirical scope: 3 of 32 V9 spokes match its half-mass atom, while the remaining 29 act as persistent slack-side accumulators with $\mathbb{P}(b = 0)$ close to zero. This per-spoke variation lies outside the homogeneous symmetric closure (Section~\ref{sec:future}). The single-pool swap-corrected stationary distribution likewise remains characterised only as a contraction-mapping fixed point.
+
+The predictive form of Theorem~\ref{thm:binding} (Section~\ref{sec:lift}) recovers per-event dust credits to within a factor of two on 57--97\% of events given engine-observable inputs. The gap to the conservation form's $\geq 99.8\%$ is engine-tick observability at the burn moment, not framework misspecification. A protocol that records the actual on-chain pre-burn currentTick alongside its rebalance event would close that gap directly.
+
+\subsection{Future work}\label{sec:future}
+
+The empirical V9 spoke-marginal distribution exhibits per-spoke variation in the atom mass $\mathbb{P}(D_{\text{pool},T_k}(\tau^+) = 0)$ ranging over $[0, 0.59]$ across 32 token-portfolio pairs. Most spokes act as persistent slack-side accumulators; the three half-mass-atom matches identified in Section~\ref{sec:framework_predictions} are the exception. This per-spoke heterogeneity lies outside the homogeneous symmetric leading-order closure of Proposition~\ref{thm:chaos2A} and points instead to a richer extension problem: characterising the dust ledger's stationary distribution under per-pool LP-asymmetry, per-pool $\nu_\varepsilon$, and joint $(\sigma_x^*, \varepsilon, \mathrm{state})$ dynamics on heterogeneous portfolio graphs.
+
+The natural analytical candidates are quantitative McKean--Vlasov rates for jump systems with empirical-measure dependence~\cite{andreis2018,chaintron2022}, adapted to the discrete-event multi-token kernel of Theorem~\ref{thm:binding}. The full production law is therefore best treated as an open extension problem rather than a within-scope refinement: Propositions~\ref{thm:chaos2A}--\ref{thm:chaos2B} are exact under their respective assumption blocks, whereas the heterogeneous production regime occupied by V9 in practice remains open.
+
+Three additional theoretical questions remain open: the single-pool swap-corrected fixed point, the finite-$N$ rate of approach to the chaos limit (a quantitative propagation-of-chaos question along the lines of \cite{andreis2018}), and a non-parametric closed form for $\rho_+$ in Proposition~\ref{thm:chaos2B} under empirical V9 slippage (no standard 3--4 parameter family appears to capture the observed heavy tails and asymmetry simultaneously). A separate empirical direction concerns the directional-asymmetry result of the prior paper, which the per-pool swap-event tick stream of Section~\ref{sec:swap} now makes it possible to decompose into numéraire and drift components. The V9 data suggest that the asymmetry persists on volatile--volatile pairs (median $D^+/D^- = 1.11$, against $1.05$ on volatile--stable pairs), making that decomposition a natural next step. Even so, the most informative immediate extension would be cross-operator replication of the operational anchor of Section~\ref{sec:cross_version} on an independent deployment of the same architecture.
+
+\section{Conclusion}\label{sec:conclusion}
+
+The dust ledger of a multi-pool concentrated liquidity manager is a stochastic flow network on the portfolio bipartite graph, governed by a closed-form Master Equation extending the binding-token residual of the prior paper\cite{ryan2026siphon}. That equation subsumes the single-pool results developed there, promotes the Connector Rule conjecture to a sign-keyed correlation, generalises zero-swap extinction to a per-token mass-conservation identity across multi-pool rebalances, and yields a hierarchy of asymptotic results on the homogeneous hub-spoke topology: a conditional propagation-of-chaos limit (Proposition~\ref{thm:chaos2A}) and a closed-form binary atom-mixture spoke marginal under arbitrary slippage law (Proposition~\ref{thm:chaos2B}), with the half-normal mixture as a narrow corollary in the symmetric-Gaussian special case.
+
+The mechanism follows directly from the V3 amount equations once depositor-keyed shared balances are present. The V6 through V9 evolution of a PM contract family on Aerodrome Slipstream (Base) provides an operational anchor for that law, while contract-level verification exhibits the same mechanism on unmodified Aerodrome Slipstream and Uniswap V3 infrastructure. Within the architectural class observed here, the dust ledger is not merely a residual store. It is a governed dynamical state through which concentrated liquidity positions become coupled across the portfolio.
+
+\begin{thebibliography}{9}
+
+\bibitem{ryan2026siphon}
+Ryan, K.R. ``The Geometric Siphon.'' \emph{SSRN preprint 6686798} (2026) \url{https://ssrn.com/abstract=6686798}.
+
+\bibitem{pi2026convexity}
+P., I. ``Convexity and Topology in Cross-Pool Dust Redistribution: Structural Edge in Active CL Management.'' \emph{SSRN preprint 6509938} (2026) \url{https://ssrn.com/abstract=6509938}.
+
+\bibitem{adams2021v3}
+Adams, H., Zinsmeister, N., Salem, M., Keefer, R., Robinson, D. ``Uniswap v3 Core.'' \emph{Uniswap Labs Technical Whitepaper} (2021) \url{https://uniswap.org/whitepaper-v3.pdf}.
+
+\bibitem{cartea2024}
+Cartea, \'A., Drissi, F., Monga, M. ``Decentralized Finance and Automated Market Making: Predictable Loss and Optimal Liquidity Provision.'' \emph{SIAM Journal on Financial Mathematics} (2024) \url{https://doi.org/10.1137/23M1602103}.
+
+\bibitem{milionis2022b}
+Milionis, J., Moallemi, C.\,C., Roughgarden, T., Zhang, A.\,L. ``Automated Market Making and Loss-Versus-Rebalancing.'' arXiv:2208.06046 (2022) \url{https://arxiv.org/abs/2208.06046}.
+
+\bibitem{heimbach2022}
+Heimbach, L., Schertenleib, E., Wattenhofer, R. ``Risks and Returns of Uniswap V3 Liquidity Providers.'' In \emph{Proceedings of the 4th ACM Conference on Advances in Financial Technologies (AFT 2022)}, pp.~89--101 (2022) \url{https://doi.org/10.1145/3558535.3559772}.
+
+\bibitem{sznitman1991}
+Sznitman, A.-S. ``Topics in Propagation of Chaos.'' In \emph{\'Ecole d'\'Et\'e de Probabilit\'es de Saint-Flour XIX, 1989}, Lecture Notes in Mathematics 1464, pp.~165--251, Springer (1991) \url{https://doi.org/10.1007/BFb0085169}.
+
+\bibitem{graham1993}
+Graham, C., M\'el\'eard, S. ``Propagation of chaos for a fully connected loss network with alternate routing.'' \emph{Stochastic Processes and their Applications} \textbf{44}(1), 159--180 (1993) \url{https://doi.org/10.1016/0304-4149(93)90043-4}.
+
+\bibitem{chaintron2022}
+Chaintron, L.-P., Diez, A. ``Propagation of chaos: a review of models, methods and applications. I. Models and methods.'' \emph{Kinetic and Related Models} \textbf{15}(6), 895--1015 (2022). arXiv:2203.00446 \url{https://arxiv.org/abs/2203.00446}.
+
+\bibitem{andreis2018}
+Andreis, L., Dai Pra, P., Fischer, M. ``McKean--Vlasov limit for interacting systems with simultaneous jumps.'' \emph{Stochastic Analysis and Applications} \textbf{36}(6), 960--995 (2018). arXiv:1704.01052 \url{https://arxiv.org/abs/1704.01052}.
+
+\bibitem{kelly1979}
+Kelly, F.\,P. \emph{Reversibility and Stochastic Networks}. Wiley, Chichester (1979). Reprinted by Cambridge University Press, 2011.
+
+\bibitem{carmona2018}
+Carmona, R., Delarue, F. \emph{Probabilistic Theory of Mean Field Games with Applications II: Mean Field Games with Common Noise and Master Equations}. Probability Theory and Stochastic Modelling, vol.~84, Springer (2018) \url{https://doi.org/10.1007/978-3-319-56436-4}.
+
+\bibitem{cardaliaguet2019}
+Cardaliaguet, P., Delarue, F., Lasry, J.-M., Lions, P.-L. \emph{The Master Equation and the Convergence Problem in Mean Field Games}. Annals of Mathematics Studies 201, Princeton University Press (2019) \url{https://press.princeton.edu/books/paperback/9780691193137/}.
+
+\end{thebibliography}
+
+\appendix
+\titleformat{\section}[block]{\Large\bfseries}{Appendix \thesection:\quad}{0pt}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+
+\section{Notation}\label{app:notation}
+
+The notation matches the prior paper\cite{ryan2026siphon} throughout, extending scalar quantities specific to one pool to vector-valued, time-indexed analogues without changing the names.
+
+\begingroup
+\renewcommand{\arraystretch}{1.0}%
+\setlength{\extrarowheight}{0pt}%
+\setlength{\aboverulesep}{1pt}%
+\setlength{\belowrulesep}{1pt}%
+\setlength{\abovecaptionskip}{4pt}%
+\setlength{\belowcaptionskip}{2pt}%
+\begin{longtable}{@{}lp{11cm}@{}}
+\caption{Notation, with cross-reference to the prior paper.}\label{tab:notation}\\
+\toprule
+Symbol & Meaning \\
+\midrule
+\endfirsthead
+\multicolumn{2}{l}{\textit{Table~\ref{tab:notation} (continued).}}\\
+\toprule
+Symbol & Meaning \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\textit{Continued on next page.}}\\
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{2}{@{}l}{\textbf{\textit{Pool geometry and position state.}}}\\
+$s$, $s_a$, $s_b$, $s_a'$, $s_b'$ & Sqrt-prices: current; old range bounds; new range bounds. \\
+$L$, $L_{\text{new}}$       & Position liquidity before and after the rebalance. \\
+$x_w$, $y_w$                & Withdrawn amounts of token0 and token1. \\
+$\delta$, $\bar s$, $w$     & Signed normalised displacement; mid-sqrt-price of the new range; new-range width $s_b' - s_a'$ (see Appendix~\ref{app:connectorproof}). \\
+$V$, $V_{\text{new}}$, $V_{\text{old}}$ & Position USD value: instantaneous ($V$); pre- and post-rebalance ($V_{\text{old}}$, $V_{\text{new}}$). \\
+$\Delta R$                  & Signed residual value (scalar). \\
+$\phi(s, s_a, s_b)$         & Per-unit-$L$ position USD value, in-range, under the stable-numéraire convention $p_{T_0} = s^2$, $p_{T_1} = 1$: $\phi = 2s - s^2/s_b - s_a$. For out-of-range cases, see Appendix~\ref{app:v3formulas}. \\
+$g_x = 1/s - 1/s_b'$, $g_y = s - s_a'$ & Per-unit-$L$ token amount at the \emph{new} range. \\
+\addlinespace[2pt]
+\multicolumn{2}{@{}l}{\textbf{\textit{Dust ledger.}}}\\
+$x_{\text{dust}}, y_{\text{dust}}$ & Pre-rebalance standing dust available at mint, per pool token; snapshot of $D_{\text{pool}}$ on the pool's tokens. \\
+$x_{\text{dust}}', y_{\text{dust}}'$ & Per-token mint leftover (Theorem~\ref{thm:binding}). Swap-free: one is zero, the other equals $|\Delta R|$. \\
+$D_{\text{pool}}(t) \in \mathbb{R}^n_{\geq 0}$ & Vector of standing-dust balances at time $t$, indexed by portfolio token $T_i$. Pool-specific snapshot: $x_{\text{dust}} = D_{\text{pool},T_a}(t)$, $y_{\text{dust}} = D_{\text{pool},T_b}(t)$. \\
+\addlinespace[2pt]
+\multicolumn{2}{@{}l}{\textbf{\textit{Swap correction.}}}\\
+$S$, $\sigma_x$, $\sigma_y$ & $S$ (scalar): fraction of $\Delta R$ absorbed by the contract-level swap (prior paper). $(\sigma_x, \sigma_y)$: signed per-token decomposition at the mint inputs (pool-frame). Swap-free: $\sigma_x = \sigma_y = 0 \iff S = 0$. \\
+\end{longtable}
+\endgroup
+
+The $g$-notation is local shorthand for the new-range amount-per-$L$ functions, used here only where the V3 amount expressions would otherwise repeat within an equation; \cite{ryan2026siphon} uses inline forms.
+
+\section{V3 amount formulas}\label{app:v3formulas}
+
+The V3 amount functions for a position over $[s_a, s_b]$ at sqrt-price $s$ are
+\begin{align}
+a_x(s, s_a, s_b) &= \begin{cases}
+\dfrac{1}{s_a} - \dfrac{1}{s_b} & \text{if } s \leq s_a \\
+\dfrac{1}{s} - \dfrac{1}{s_b} & \text{if } s \in [s_a, s_b] \\
+0 & \text{if } s \geq s_b,
+\end{cases} \\[6pt]
+a_y(s, s_a, s_b) &= \begin{cases}
+0 & \text{if } s \leq s_a \\
+s - s_a & \text{if } s \in [s_a, s_b] \\
+s_b - s_a & \text{if } s \geq s_b.
+\end{cases}
+\end{align}
+These are the $L = 1$ normalisations; for liquidity $L$, the corresponding token amounts are $L\,a_x(s, s_a, s_b)$ and $L\,a_y(s, s_a, s_b)$. The functions are monotone in the standard way: $a_y$ is non-decreasing in $s$, while $a_x$ is non-increasing, reflecting the standard V3 single-sided regimes at the range boundaries.
+
+\section{Proof of Theorem~\ref{thm:binding}}\label{app:masterproof}
+
+The mint chooses $L_{\text{new}}$ to maximise deployed liquidity subject to the available token balances. This appendix solves the resulting linear programme explicitly in each of the three positional sub-cases.
+
+\subsection*{The mint as a linear programme}
+
+Let
+\[
+g_x = a_x(s, s_a', s_b'), \qquad g_y = a_y(s, s_a', s_b').
+\]
+By Appendix~\ref{app:v3formulas}, both satisfy $g_x \geq 0$ and $g_y \geq 0$. The mint problem is
+\begin{equation}\label{eq:lp}
+L_{\text{new}} = \max\bigl\{L \geq 0 : L\,g_x \leq \hat x \text{ and } L\,g_y \leq \hat y\bigr\}.
+\end{equation}
+This is a one-dimensional linear programme in $L$. Since the objective is increasing in $L$, the optimum is attained when at least one constraint binds. The two candidate binding values are
+\begin{equation}
+L_x^* = \hat x / g_x \text{ (when } g_x > 0\text{)}, \qquad L_y^* = \hat y / g_y \text{ (when } g_y > 0\text{)}.
+\end{equation}
+Hence
+\[
+L_{\text{new}} = \min(L_x^*, L_y^*),
+\]
+with the binding side determined by whichever candidate is smaller.
+
+\subsection*{Sub-case (i): in range}
+
+Suppose $s \in (s_a', s_b')$. Then
+\[
+g_x = 1/s - 1/s_b' > 0, \qquad g_y = s - s_a' > 0,
+\]
+so both candidate liquidities are finite. If $L_x^* \leq L_y^*$, the $x$-constraint binds, so
+\begin{equation}
+L_{\text{new}} = \hat x / g_x, \quad x_{\text{dust}}' = 0, \quad y_{\text{dust}}' = \hat y - L_{\text{new}}\,g_y = \hat y - \hat x\,(g_y / g_x).
+\end{equation}
+If $L_y^* < L_x^*$, the $y$-constraint binds, so
+\begin{equation}
+L_{\text{new}} = \hat y / g_y, \quad x_{\text{dust}}' = \hat x - L_{\text{new}}\,g_x, \quad y_{\text{dust}}' = 0.
+\end{equation}
+In the swap-free regime $\hat x = x_w + x_{\text{dust}}$ and $\hat y = y_w + y_{\text{dust}}$, so the binding side is determined by the supply ratio $\hat x / \hat y$ versus $g_x / g_y$, with $x_{\text{dust}}' \cdot y_{\text{dust}}' = 0$ in either case.
+
+\subsection*{Boundary sub-cases}
+
+Sub-cases (ii) and (iii) cover the boundary regimes $s \leq s_a'$ and $s \geq s_b'$. These lie outside Theorem~\ref{thm:binding}'s hypothesis but are reproduced for completeness; the LP solution remains explicit in each.
+
+If $s \leq s_a'$, then
+\[
+g_x = 1/s_a' - 1/s_b' > 0, \qquad g_y = 0.
+\]
+Only the $x$-constraint is active, so
+\[
+L_{\text{new}} = \hat x / g_x, \quad x_{\text{dust}}' = 0, \quad y_{\text{dust}}' = \hat y.
+\]
+The new position is therefore single-sided in $T_a$ at the lower boundary of the range.
+
+If $s \geq s_b'$, the argument is symmetric. In that case
+\[
+g_x = 0, \qquad g_y = s_b' - s_a' > 0,
+\]
+so only the $y$-constraint is active and
+\[
+L_{\text{new}} = \hat y / g_y, \quad x_{\text{dust}}' = \hat x, \quad y_{\text{dust}}' = 0.
+\]
+
+\subsection*{Swap-corrected inputs}
+
+With a non-zero swap correction $(\sigma_x, \sigma_y)$ as in Section~\ref{sec:swap}, the inputs become
+\[
+\hat x = x_w + x_{\text{dust}} - \sigma_x, \qquad \hat y = y_w + y_{\text{dust}} - \sigma_y.
+\]
+The LP structure in~\eqref{eq:lp} is unchanged, so the same binding-side and leftover formulas apply verbatim with the corrected inputs. The ratio-preserving locus in Theorem~1 of the prior paper becomes
+\[
+\hat x / \hat y = g_x / g_y,
+\]
+which is the routing target of the swap step. Slippage and sqrt-price drift during the swap then generate a measure-non-zero noise floor on which $x_{\text{dust}}' \cdot y_{\text{dust}}' \neq 0$. \proofqed
+
+\section{Proof of Proposition~\ref{thm:connector} (Connector Rule)}\label{app:connectorproof}
+
+The argument has two steps. First, Theorem~\ref{thm:binding} identifies the binding side at a rebalance and therefore the side on which dust is left over. Second, under the connector-token hypothesis, the signed displacement of a pool inherits a shared component from the connector token's marginal-price evolution, which induces the predicted cross-rebalance sign pattern in connector-side dust.
+
+\subsection*{Per-rebalance binding side}
+
+Consider a pool $P_k$ with tokens $T_a$ at the $T_0$ position and $T_b$ at the $T_1$ position, current sqrt-price $s$, old range $[s_a, s_b]$, and new range $[s_a', s_b']$, with $s \in [s_a', s_b']$. For clarity, first take the swap-free regime $\sigma_x = \sigma_y = 0$; the swap-corrected case is identical with $\hat x, \hat y$ replacing $x_w + x_{\text{dust}}$ and $y_w + y_{\text{dust}}$ throughout.
+
+By the in-range case of Appendix~\ref{app:masterproof}, the binding side is determined by
+\begin{equation}\label{eq:bindingratio}
+\text{$T_b$ binds } \iff \frac{\hat x}{\hat y} > \frac{g_x}{g_y}, \qquad \text{$T_a$ binds } \iff \frac{\hat x}{\hat y} < \frac{g_x}{g_y},
+\end{equation}
+where
+\[
+g_x = 1/s - 1/s_b', \qquad g_y = s - s_a'.
+\]
+Dust appears on the slack side: $T_a$ leaks when $T_b$ binds, and $T_b$ leaks when $T_a$ binds.
+
+At the rebalance moment, the carried position composition is
+\begin{equation}
+x_w = L\,a_x(s, s_a, s_b), \qquad y_w = L\,a_y(s, s_a, s_b),
+\end{equation}
+so the supply ratio $\hat x / \hat y$ depends on $s$ through the V3 amount functions at the old range and through the standing-balance ratio at this rebalance.
+
+Define the signed normalised displacement
+\[
+\delta = \frac{s - \bar s}{w/2},
+\]
+where $\bar s$ is the mid-sqrt-price of the new range and $w = s_b' - s_a'$. Holding the new-range geometry fixed and treating the standing-balance ratio as locally fixed across nearby rebalances of $P_k$, condition~\eqref{eq:bindingratio} reduces to a sign condition on $\delta$: when $\delta > 0$ (sqrt-price above the new-range mid), the position composition tilts toward $T_b$, $\hat x / \hat y$ falls, and $T_a$ tends to bind, with $T_b$ leaking; when $\delta < 0$, the converse holds.
+
+This establishes the per-rebalance sign rule. The sign of displacement determines which side is slack, and therefore which token receives the dust residual.
+
+\subsection*{Population-level correlation}
+
+Now let $T^*$ be the connector token of Proposition~\ref{thm:connector}, so that $\deg(T^*) \geq 2$ and $\deg(T^*) > \deg(T)$ for every non-connector token $T$ paired with it. Across all pools containing $T^*$, the connector contributes a shared component to the pool's marginal-price evolution, whereas the non-connector token contributes a pool-specific component.
+
+Under the stationarity assumption that the connector-token marginal price has no systematic drift over the rebalance window (relative to the rest of the portfolio), and the homogeneity assumption that in-range rebalances dominate, the signed displacement of pool $P_k$ may be written in reduced form as
+\[
+\delta_k \approx \delta_{T^*} + \epsilon_k,
+\]
+where $\delta_{T^*}$ is the connector-shared component and $\epsilon_k$ is a pool-specific term.
+
+The signed connector-side dust quantity, as defined in the statement of Proposition~\ref{thm:connector}, is the dust credited to the non-connector side minus the dust credited to the connector's side: positive when the non-connector side leaks and negative when the connector's side leaks.
+
+If $T^* = T_a$ (the $T_0$ position), then by the per-rebalance sign rule above, $\delta_k > 0$ implies $T_b$ leaks and signed connector-side dust is positive; $\delta_k < 0$ implies $T_a$ leaks and signed connector-side dust is negative. Hence displacement and signed connector-side dust move with the same sign across rebalances, implying a positive Spearman rank correlation. By symmetry, if $T^* = T_b$ (the $T_1$ position), the sign flips and the correlation is negative.
+
+The magnitude of the correlation depends on the relative importance of the shared connector component $\delta_{T^*}$ versus the pool-specific noise $\epsilon_k$. As a heuristic, let $r := \mathrm{Var}(\delta_{T^*}) / \mathrm{Var}(\delta_{T^*} + \epsilon_k)$ denote the variance share of the connector-shared component; one then expects the magnitude of the observed rank correlation to increase with $r$, approaching one as $r \to 1$ and falling toward zero as pool-specific noise dominates. The V9 sample (Section~\ref{sec:framework_predictions}) recovers both the sign-by-position prediction and the magnitude-scaling pattern; pools where $|\rho|$ is weakest correspond to pool-specific volatility regimes where $\epsilon_k$ dominates, consistent with the heuristic rather than a framework failure. \proofqed
+
+\section{Proof of Theorem~\ref{thm:extinction} and partition lemma}\label{app:extinctionproof}
+
+The proof of Theorem~\ref{thm:extinction} is a per-token conservation argument at the contemporaneous sqrt-price. The donor/absorber partition is then discussed via Lemma~\ref{lem:partition}, which gives a sufficient condition under which a non-trivial partition arises with positive probability, and asymptotically with high probability under additional mixing assumptions.
+
+\subsection*{Proof of Theorem~\ref{thm:extinction}}
+
+Consider a rebalance of pool $P_k$ at time $\tau$, with contemporaneous sqrt-price $s = s(\tau)$, in the swap-free regime $\sigma_x = \sigma_y = 0$. If a token $T_i \notin P_k$, then the dust-ledger entry $D_{\text{pool},i}$ is unchanged by~\eqref{eq:master}, and no position outside $P_k$ moves any amount of $T_i$. Hence the per-token total $M_i$ defined in~\eqref{eq:masscons} is unchanged.
+
+Now suppose $T_i \in P_k$, and write $T_i = T_a$ without loss of generality. By the V3 amount equations and Theorem~\ref{thm:binding}, position $k$'s amount of $T_a$ jumps from
+\[
+L^{(k)} a_x(s, s_a, s_b) = x_w
+\]
+to
+\[
+L_{\text{new}}^{(k)} g_x = \hat x - x_{\text{dust}}',
+\]
+while the corresponding dust-ledger entry jumps from $x_{\text{dust}}$ to $x_{\text{dust}}'$. In the swap-free regime $\hat x = x_w + x_{\text{dust}}$, so
+\[
+L_{\text{new}}^{(k)} g_x + x_{\text{dust}}' = (\hat x - x_{\text{dust}}') + x_{\text{dust}}' = \hat x = x_w + x_{\text{dust}} = L^{(k)} a_x(s, s_a, s_b) + x_{\text{dust}}.
+\]
+Thus the total allocation of token $T_a$ across the moving position and the dust ledger is preserved across the rebalance at price $s$. All other positions containing $T_a$, evaluated at the same contemporaneous sqrt-price, are unchanged by this event. Summing over positions and adding the dust ledger therefore gives
+\[
+M_{T_a}(\tau^+) = M_{T_a}(\tau^-).
+\]
+The same argument applies to the other token in the rebalanced pool. Summing over all tokens yields per-token conservation at the event, and multiplying by the fixed reference prices $p_i$ gives invariance of $V_{\text{total}}$.
+
+The $m=1$ corner cases reduce to the corresponding single-pool statements of the prior paper: under $S=0$, the lone position's residuals accumulate in dust, recovering Theorem~3; under non-zero $S$, the swap-corrected single-pool case yields the in-expectation convergence regime of Theorem~2. \proofqed
+
+\subsection*{Lemma: a sufficient condition for non-trivial partition}
+
+\begin{lemma}[Positive-probability non-trivial partition under heterogeneity]\label{lem:partition}
+Under the assumptions of Theorem~\ref{thm:extinction}, suppose further that
+\begin{enumerate}[leftmargin=*,label=(P\arabic*)]
+\item per-event slippage $(\sigma_x, \sigma_y)$ is conditionally mean-zero with strictly positive conditional variance;
+\item rebalance arrival rates $\{\lambda_k\}_{k=1}^m$ are heterogeneous;
+\item position ranges $\{[s_a^{(k)}, s_b^{(k)}]\}_{k=1}^m$ are not all coincident.
+\end{enumerate}
+Then, for any window $[t_0, t_1]$ of positive length in which every position rebalances at least twice, the cumulative net impacts
+\[
+\Bigl\{\sum_{\tau \in [t_0, t_1]} \Delta V_k(\tau)\Bigr\}_{k=1}^m
+\]
+have a non-degenerate joint law. In particular, a non-trivial donor/absorber partition occurs with strictly positive probability. Under additional mixing assumptions on the dust process, that probability tends to one as $T = t_1 - t_0 \to \infty$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+By Theorem~\ref{thm:extinction}, the sum of cumulative position impacts plus the cumulative dust-value change is zero in the window. Under (P1), $\Delta V_k$ at each rebalance has a slippage-driven random component with strictly positive variance, conditional on the pre-event state. Under (P2)--(P3), the per-event $\Delta V_k$ distributions are not exchangeable across positions; positions with higher arrival rates accumulate more variance, and positions with different ranges absorb dust at different rates given the same standing balance. The vector of cumulative $(\Delta V_1, \ldots, \Delta V_m)$ over the window therefore has non-degenerate support rather than collapsing onto a single deterministic sign pattern. Combined with the conservation constraint $\sum_k \Delta V_k + \Delta V_{\text{dust}} = 0$, this gives a strictly positive probability of mixed-sign cumulative impacts at any non-trivial window length. Under additional ergodic or mixing assumptions on the dust process, repeated accumulation over long windows makes such mixed-sign partitions asymptotically typical.
+\end{proof}
+
+The lemma's failure mode (partition triviality) requires zero slippage variance or perfectly homogeneous arrivals and ranges across positions; the V9 dataset has neither, and the partition is observed in eight of eight multi-pool portfolios.
+
+\section{Proof of Propositions~\ref{thm:chaos2A} (Conditional propagation of chaos) and~\ref{thm:chaos2B} (Closed-form one-spoke marginal)}\label{app:chaosproof}
+
+\paragraph{Status of the argument.}
+Proposition~\ref{thm:chaos2A} is stated as a conditional theorem: assumption (A4), namely uniform-in-$N$ geometric ergodicity of the hub-marginal chain, is the only step in the proof not derived directly from the model definition. The remaining steps are rigorous under (A1$'$)--(A3) and (A5). Proposition~\ref{thm:chaos2B} is then a leading-order consequence of Proposition~\ref{thm:chaos2A} in the small-$w$ regime, valid under arbitrary slippage law $\nu_\varepsilon$; the half-normal mixture (Corollary~\ref{cor:halfnormal}) is the symmetric-Gaussian special case.
+
+\paragraph{Empirical anchoring of the assumption block.}
+On V9 chain data, the assumption block can be calibrated and stress-tested. (i)~The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\sigma_x^{\text{raw}}$ collapses the swap-correction noise to a single one-dimensional residual $\varepsilon$ ($\mathrm{corr}(\varepsilon_1, \varepsilon_2) = 1.0000$ across 942 V9 substantial-swap events), whose distribution under V9 is asymmetric ($\mathbb{P}(\varepsilon < 0) = 0.26$ globally, $0.06$--$0.39$ per pool) and heavy-tailed (excess kurtosis $\in [73, 451]$). (ii)~Sign and magnitude conditioning of $\varepsilon$ on $\sigma_x^*$ together close approximately 71\% of the gap between the i.i.d.-$\varepsilon$ baseline and the V9 spoke median; the corrected closed form (Proposition~\ref{thm:chaos2B}) matches the simulator's atom mass to within $0.001$ at the kernel level. (iii)~The leading-order approximation $|Lw + b - h| \approx Lw$ holds in the typical V9 event (median dust-to-position ratio $0.55\%$); state accumulation is not the dominant source of any production gap. (iv)~The factorisation diagnostic $|\rho|\cdot\sqrt{\mathrm{events}/N}$ is approximately constant in $N$ (max/min $\leq 1.34$) under three independent slippage-bootstrap kernels with materially different marginal shapes, consistent with asymptotic factorisation across the $\nu_\varepsilon$ family. (v)~A topology-aware replay on V9 portfolio graphs reveals heterogeneous production behaviour outside the homogeneous symmetric leading-order closure: per-pool LP-asymmetry, per-pool $\nu_\varepsilon$, and joint $(\sigma_x^*, \varepsilon, \mathrm{state})$ dynamics. The full V9 spoke-marginal law is therefore a graph- and geometry-dependent extension question rather than a within-scope refinement of the present theorem (Section~\ref{sec:future}).
+
+\subsection*{The finite-$N$ Markov chain}
+
+The state of the homogeneous hub-spoke system is $X^N = (H, B_1, \ldots, B_N) \in \mathbb{R}_{\geq 0}^{N+1}$, where $H = D_{\text{pool},T_0}$ and $B_k = D_{\text{pool},T_k}$. Each pool $P_k$ fires at rate $\lambda$. When $P_k$ fires, draw $\delta \sim \mathrm{Unif}(\{\pm w/2\})$ and $\varepsilon \sim \nu_\varepsilon$, then update $(H, B_k)$ via the kernel~\eqref{eq:Khom} and leave $B_j$ ($j \neq k$) unchanged. The full chain is exchangeable in its spoke coordinates.
+
+\subsection*{Per-event jump on a homogeneous hub-spoke pool}
+
+Consider a rebalance of pool $P_k = (T_0, T_k)$ in the homogeneous hub-spoke topology, with $h = D_{\text{pool},T_0}$ and $b_k = D_{\text{pool},T_k}$ pre-event. Without loss of generality consider the right-shift case $\delta = +w/2$ (the left-shift case is symmetric in the role of hub and spoke). At the boundary trigger, the position withdraws $x_w = 0$ and
+\[
+y_w = L\,(s_b - s_a) = L\,s_b\,(1 - e^{-w}) \approx Lw + O(w^2).
+\]
+The new range re-centres around $s = s_b$, giving per-unit-$L$ token amounts
+\[
+g_x \approx \frac{w}{2s}, \qquad g_y \approx \frac{ws}{2}.
+\]
+With swap routed at the spot price, so that $\sigma_y = -s^2\sigma_x$, the perfect-routing solution is
+\[
+\sigma_x^* = -\frac{Lw + b_k - h}{2} + O(w^2),
+\]
+which yields post-swap mint inputs at the LP-locus of the form
+\[
+\hat x = \hat y = \frac{h + Lw + b_k}{2}
+\]
+to leading order.
+
+\subsection*{Single-$\varepsilon$ slippage perturbation and slack-side leftover}
+
+The Pool.Swap routing conservation
+\[
+\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}
+\]
+collapses the swap noise to a single residual $\varepsilon$: write
+\[
+\sigma_x = \sigma_x^*(1 + \varepsilon), \qquad \sigma_y = \sigma_y^*(1 + \varepsilon), \qquad \varepsilon \sim \nu_\varepsilon.
+\]
+The post-swap mint inputs are then
+\begin{align*}
+\hat x \;&=\; \tfrac{1}{2}(h + Lw + b_k) + \tfrac{1}{2}(Lw + b_k - h)\,\varepsilon, \\
+\hat y \;&=\; \tfrac{1}{2}(h + Lw + b_k) - \tfrac{1}{2}(Lw + b_k - h)\,\varepsilon \cdot s^2_h,
+\end{align*}
+where $s^2_h := s^2 \cdot 10^{d_0 - d_1}$ is the swap-routing slope in the human-scaled token frame, equal to $1$ to leading order in the homogeneous symmetric regime ($s \to 1$, equal token decimals). To leading order,
+\begin{equation}\label{eq:hatdiff}
+\hat x - \hat y \;=\; \tfrac{1}{2}(Lw + b_k - h)\,(1 + s^2_h)\,\varepsilon,
+\end{equation}
+so the binding side at the mint is determined by $\mathrm{sgn}\bigl((Lw + b_k - h)\,\varepsilon\bigr)$: spoke binds (i.e.\ $b_k' = 0$) iff $(Lw + b_k - h)\,\varepsilon < 0$. Conditional on the binding side, the slack-side leftover is
+\begin{equation}\label{eq:leftovermag}
+\text{leftover} \;=\; |\hat x - \hat y|\,\bigl(1 + O(w)\bigr) \;=\; \tfrac{1}{2}\,|Lw + b_k - h|\,|\varepsilon|\,(1 + s^2_h)\,\bigl(1 + O(w)\bigr).
+\end{equation}
+
+\subsection*{Foster-Lyapunov drift for the full chain}
+
+Let $\Phi^N(h, b_1, \ldots, b_N) = h^2 + \sum_k b_k^2$. Under (A1$'$) and the kernel~\eqref{eq:Khom}, the per-event drift on the firing pool $k$ is
+\begin{equation}\label{eq:fosterdrift}
+\mathbb{E}[\Phi^N(X') - \Phi^N(X) \mid X] \;\leq\; -\tfrac{1}{2}h^2 - \tfrac{1}{2}b_k^2 + C_w,
+\end{equation}
+with $C_w = O\bigl((Lw)^2\,\sigma_{\text{slip}}^2\bigr)$, using $\mathbb{E}[\varepsilon^2] = \sigma_{\text{slip}}^2$ and the elementary bound $(a + b)^2 \leq 2a^2 + 2b^2$. The drift is negative outside the compact set $\{h^2 + b_k^2 \leq 2C_w\}$. Combined with (A1$'$)'s density-bounded-below assumption (a small set / petite set construction on a neighbourhood of the origin), Meyn--Tweedie's Theorem~13.0.1 gives:
+
+\begin{lemma}\label{lem:stationary}
+Under (A1$'$)--(A3), the chain $X^N$ admits a unique stationary law $\pi^N$ with finite second moment, and the family $\{\pi^N_{(m)}\}_{N \geq m}$ is tight on $\mathbb{R}_{\geq 0}^m$ for every fixed $m$.
+\end{lemma}
+
+\subsection*{Asymptotic decoupling under (A4)}
+
+For the spoke chain on $b_k$: the spoke is updated only when pool $P_k$ rebalances (rate $\lambda$), but between two consecutive spoke-events of $P_k$ the hub is touched on average $N$ times by other pools' rebalances. Provisionally suppose (A4): the hub-marginal chain in stationary spoke environment mixes in TV at rate $C\rho^n$ after $n$ hub events, uniformly in $N$. Consider a Markov chain $\bar B$ on $\mathbb{R}_{\geq 0}$ with kernel: at each step, draw $\bar H \sim \pi_H$ independently of past state, draw $(\delta, \varepsilon)$ as before, and apply~\eqref{eq:Khom} with $(\bar B, \bar H)$ in place of $(B_k, H)$. The pair $(\mu, \pi_H)$ is the unique fixed point of the McKean--Vlasov system
+\begin{equation}\label{eq:McKVfixed}
+\mu \;=\; \mathrm{Stat}\bigl(\widetilde{\mathcal{K}}_w \mid \bar H \sim \pi_H\bigr), \qquad \pi_H \;=\; \mathrm{Stat}\bigl(\widetilde{\mathcal{K}}_w \mid \bar B \sim \mu\bigr),
+\end{equation}
+where $\mathrm{Stat}(\cdot)$ takes a kernel parametrised by an environment law to its unique stationary law. Uniqueness is by a contraction argument anchored not by the TV-Lipschitz constant $\Lambda$ but by the binding-side reset: at each event, with probability $q := \mathbb{P}_{\nu_\varepsilon}(\varepsilon < 0)$ the spoke chain resets to $0$ (annihilating any difference between coupled chains). The contraction rate on $\mu$ is $\rho_B := 1 - q < 1$, giving uniqueness even when $\Lambda > 1$.
+
+\begin{proof}[Proof of Proposition~\ref{thm:chaos2A}, sketch]
+Tag spoke $k = 1$. Couple $(B_1^N, \bar B)$ via shared boundary triggers, slippage variables, and binding-side outcomes; the only difference is the hub state seen at each spoke event ($H_N(\tau_n^-)$ versus $\bar H_n \sim \pi_H$). By (A4), the TV distance between these distributions decays as $C\rho^N$ uniformly in $n$. By (A5), the coupled chains satisfy
+\[
+\mathbb{E}\bigl[|B_1^N(\tau_n^+) - \bar B(\tau_n^+)|\bigr] \leq \Lambda \cdot d_{\mathrm{TV}}\bigl(\mathrm{Law}(H_N(\tau_n^-)), \pi_H\bigr) + \rho_B \cdot \mathbb{E}\bigl[|B_1^N(\tau_{n-1}^+) - \bar B(\tau_{n-1}^+)|\bigr].
+\]
+The unconditional contraction $\rho_B = 1 - q$ from the binding-side reset gives an exponentially small bound in $N$ at any fixed event count. The stationary fixed-point identification is by passing to the limit; uniqueness from~\eqref{eq:McKVfixed}. The same argument applied $m$-wise gives $\pi^N_{(m)} \to \mu^{\otimes m}$.
+\end{proof}
+
+\noindent The proof shows in particular that pairwise correlations decay as $|\rho_{ij}^N| = O(\rho^N)$ exponentially in $N$, modulo (A4)'s constants. This is stronger than the unconditional $O(1/N)$ bound discussed in the surrounding text and consistent with the simulator results of Table~\ref{tab:chaossweep} and the V9 evidence of Table~\ref{tab:chaos_v9}.
+
+\subsection*{Closed-form spoke marginal in the small-$w$ limit}
+
+\begin{proof}[Proof of Proposition~\ref{thm:chaos2B}, sketch]
+In the small-$w$ regime, $|Lw + B_k - H| = Lw \cdot \bigl(1 + O(\sigma_{\text{slip}})\bigr)$, so the leftover in~\eqref{eq:Khom} reduces at leading order to
+\[
+\frac{Lw}{2}\,|\varepsilon|\,(1 + s^2_h).
+\]
+The binding side is determined by $\mathrm{sgn}\bigl((Lw + B_k - H)\,\varepsilon\bigr) \approx \mathrm{sgn}(\varepsilon)$, since $(Lw + B_k - H) > 0$ in the typical-state regime. The spoke therefore binds (giving $B_k' = 0$) iff $\varepsilon < 0$, with probability $q = \mathbb{P}_{\nu_\varepsilon}(\varepsilon < 0)$; otherwise $B_k' = \tfrac{Lw}{2}\,|\varepsilon|\,(1 + s^2_h)$ with $\varepsilon \geq 0$, contributing the conditional law $\rho_+$.
+\end{proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:halfnormal}, sketch]
+If $\nu_\varepsilon$ is symmetric mean-zero Gaussian with standard deviation $\sigma_{\text{slip}}$, then $q = \mathbb{P}(\varepsilon < 0) = 1/2$ and $|\varepsilon|$ is half-normal with scale $\sigma_{\text{slip}}$. Multiplying by $\tfrac{Lw}{2}(1 + s^2_h)$ gives $\rho_+ = \mathrm{HN}(\beta)$ with $\beta = Lw\,\sigma_{\text{slip}}\,(1 + s^2_h)/2$, which reduces to $Lw\,\sigma_{\text{slip}}$ in the homogeneous symmetric limit ($s \to 1$, $d_0 = d_1$).
+\end{proof}
+
+\subsection*{Open: uniform-in-$N$ rate and full McKean--Vlasov route}
+
+The conditional theorem above establishes the asymptotic factorisation modulo (A4). Two unconditional routes to (A4) are open and form the natural next technical step in this programme.
+
+\emph{Andreis--Dai Pra--Fischer route.} The kernel $\widetilde{\mathcal{K}}_w$ depends on the empirical spoke measure $\nu^N := (1/N)\sum_k \delta_{B_k}$ through the firing-pool's $B_k$. The Lipschitz dependence (A5) matches the hypotheses of \cite{andreis2018} \S5 for piecewise deterministic McKean--Vlasov systems. Adapting their $W_1$-Wasserstein rate argument to the discrete-event formulation here would give a quantitative version of (A4) and hence a quantitative rate in Proposition~\ref{thm:chaos2A}.
+
+\emph{Loss-network route.} Lift Graham--M\'el\'eard's variation-norm theorem~\cite{graham1993} from the integer-state-space loss network to the continuous-state-space dust ledger by approximation arguments. This is the route discussed in Section~\ref{sec:lossnet_analogue} but is technically heavier because it requires controlling the convergence of the discrete approximation uniformly in $N$.
+
+Either route would convert the conditional Proposition~\ref{thm:chaos2A} into an unconditional theorem with explicit rate. The Foster--Lyapunov drift~\eqref{eq:fosterdrift} is the input both routes need from the model definition. \proofqed
+
+\section{Methodology of the empirical validation}\label{app:methodology}
+
+\subsection*{Hypotheses summary}
+
+\begin{table}[H]
+\centering
+\caption{Empirical hypotheses and where each is checked.}
+\label{tab:hypotheses}
+\begin{tabular}{@{}cp{5.5cm}p{1.6cm}p{5.6cm}@{}}
+\toprule
+ID & Hypothesis & Source & Result \\
+\midrule
+H1 & Per-event jump matches on-chain dust credits & Thm~\ref{thm:binding}    & Median 1.0000 across 31/31 groups (\S\ref{sec:cross_version}, \S\ref{sec:results}) \\
+H2 & Same equation across V6 to V9                 & Thm~\ref{thm:binding}    & $\sim\!34{,}500$ events on four contracts (\S\ref{sec:cross_version}) \\
+H3 & Connector-side correlation has predicted sign & Prop~\ref{thm:connector} & $T_0$ median $+0.42$, $T_1$ median $-0.44$, 37 groups (\S\ref{sec:framework_predictions}) \\
+H4 & Multi-pool portfolios partition into donors and absorbers & Thm~\ref{thm:extinction} & 8/8 V9 multi-pool portfolios (\S\ref{sec:framework_predictions}) \\
+H5 & Distinct spokes asymptotically independent    & Prop~\ref{thm:chaos2A}   & $|\rho| \leq 0.14$ on 12 V9 spoke pairs (\S\ref{sec:framework_predictions}) \\
+H5b& Atom-mixture closed form for spoke marginal   & Prop~\ref{thm:chaos2B}   & sim $\mathbb{P}(b{=}0) {=} \mathbb{P}(\varepsilon{<}0)$ within $0.001$; half-normal special case in 3 of 32 V9 spokes (\S\ref{sec:framework_predictions}) \\
+H6 & Theorem~\ref{thm:binding} predicts forward    & Thm~\ref{thm:binding}    & 57--97\% within $2\times$, capped by engine-tick observability (\S\ref{sec:lift}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Contracts and schemas}
+
+The four PM contracts in the framework's class are PM~V6 (active 1--5 March 2026), PM~V7 (6--13 March), PM~V8 (13--21 March), and PM~V9 (21 March onward). V6 and V7 share a 2-tuple $(\text{depositor}, \text{token})$ dust mapping; V8 introduced the portfolio dimension giving the 3-tuple $(\text{depositor}, \text{portfolioId}, \text{token})$ that V9 inherits. The V8 to V9 changes were internal AERO-leak-fix logic that did not modify event signatures. The V9 lake indexes 126{,}339 \texttt{Rebalanced} events and 143{,}991 \texttt{DustCredited} events over the 50-day window from V9 deployment to the current cursor; V6, V7, and V8 are reconstructed from per-version diffusion logs.
+
+\subsection*{Conservation-form prediction}
+
+For each rebalance event, the conservation-form prediction takes $(x_w, y_w)$ from the rebalance transaction's Pool.Burn event, $(\sigma_x, \sigma_y)$ from its Pool.Swap event on the rebalance pool, $(m_0, m_1)$ from its Pool.Mint event, and the standing-balance vector from the per-(depositor, portfolio, token) chronological credit history. The conservation expression $(x_{\text{dust}}', y_{\text{dust}}') = (x_w + x_{\text{dust}} - \sigma_x - m_0,\; y_w + y_{\text{dust}} - \sigma_y - m_1)$ is then compared to the on-chain \texttt{DustCredited} amounts emitted at the rebalance. The credit-history reconstruction is verified at 99.83\% agreement with the on-chain \texttt{dustBalance} mapping on 16{,}388 comparison rows.
+
+\subsection*{Data sources}
+
+The empirical validation in Section~\ref{sec:empirical} uses a PM~V9 event lake (all contract events on Base from deployment at block 43{,}630{,}898 onwards), an Aerodrome swap dataset for the top-50 CL pools by historical vote weight (each Pool.Swap event's \texttt{sqrtPriceX96}, \texttt{liquidity}, and \texttt{tick}), and the off-chain rebalancing engine's diffusion log (per-rebalance pre-event position value, token prices, engine-detected pre-burn tick, and new range geometry).
+
+The prediction pipeline operates per (depositor, portfolio): load all rebalance events and dust credits; build per-pool sorted-tick lookups for tick recovery and per-(pool, transaction) swap-delta lookups for routing detection; walk events in chronological order, applying the closed-form jump of Theorem~\ref{thm:binding} and comparing to the actual on-chain credit; update the standing balance with the emitted credit before the next event.
+
+Two auxiliary indexers support the validation. An admin-op indexer scans all 138{,}080 PM~V9 transactions via the Subsquid Network HTTP gateway and confirms zero silent dust mutations (no \texttt{transferDust}, \texttt{mergePortfolios}, \texttt{reassignPortfolio}, \texttt{withdrawDust}, \texttt{forceSetState}, or \texttt{emergencyWithdraw} calls); the only $27$ decoded admin operations are \texttt{depositDust} calls already captured as \texttt{DustCredited} events. A swap indexer filtering on the indexed sender topic records 73{,}378 PM~V9-issued Pool.Swap events across all 52 PM~V9-managed pools, confirming the routing fires on 74--96\% of rebalance events and providing the swap-correction inputs $(\sigma_x, \sigma_y)$.
+
+\subsection*{Simulator}
+
+The hub-spoke simulator underlying Tables~\ref{tab:chaosverif}--\ref{tab:chaoshetero} and the kernel bootstraps of Section~\ref{sec:framework_predictions} is implemented in PyTorch with GPU vectorisation across $M = 32$ parallel chains, with a per-chain burn-in of $\max(5 \times 10^4,\, 10N)$ events before any state is recorded. The i.i.d.\ bootstrap draws $\varepsilon$ from the marginal empirical distribution of $\varepsilon_1$ across the $942$ V9 substantial-swap events; the sign-conditional bootstrap stratifies by $\operatorname{sgn}(\sigma_x^*)$; the magnitude-conditional bootstrap additionally bins by $|\sigma_x^*|/x_{\text{pre}}$ into four equal-frequency strata. Per-chain summaries are aggregated to medians with $95\%$ percentile intervals across the $M$ chains; runs are deterministic under seed $\texttt{20260510}$.
+
+\section{Foundry verification suite}\label{app:foundry}
+
+The verification suite of Section~\ref{sec:foundry} comprises 19 tests across 5 contracts. Eleven mock-pool tests are network-free and verify Theorem~\ref{thm:binding}, Theorem~\ref{thm:extinction}, and Proposition~\ref{thm:connector} against the V3-exact tick math directly. Eight live fork tests, all pinned to Base block~\texttt{43{,}175{,}000}, verify Theorem~\ref{thm:binding} against two unmodified V3 \texttt{NonfungiblePositionManager} contracts on Base.
+
+\subsection*{Test--theorem mapping}
+
+\begin{table}[H]
+\centering
+\caption{Foundry test mapping.}
+\label{tab:foundry-mapping}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+Test contract & Tests & Network & Verifies \\
+\midrule
+\texttt{MasterEquationT1Mock} & 7 & none & Theorem~\ref{thm:binding} (eq:newdust) \\
+\texttt{MasterEquationT2} & 2 & none & Theorem~\ref{thm:extinction} (mass conservation) \\
+\texttt{MasterEquationConnectorRule} & 2 & none & Proposition~\ref{thm:connector} (sign-keyed correlation) \\
+\texttt{MasterEquationT1Fork} & 4 & Base fork & Theorem~\ref{thm:binding} against Aerodrome Slipstream NFPM \\
+\texttt{MasterEquationT1ForkUniV3} & 4 & Base fork & Theorem~\ref{thm:binding} against Uniswap V3 NFPM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two fork tracks differ only in the underlying NFPM ABI (\texttt{tickSpacing} on Slipstream, \texttt{fee} on Uniswap V3); the closed form is the same on both. The reference PM wrapper under test (\texttt{ReferencePM}, \texttt{ReferencePMUniV3}) is a $\sim\!270$-line Solidity contract that adds the depositor-keyed shared dust mapping; V3 mechanics are delegated to the unmodified underlying NFPM.
+
+\subsection*{Reproduction}
+
+The mock-pool tests run locally without network access:
+
+\begin{codeblock}\begin{verbatim}
+forge test -vv --no-match-contract Fork
+\end{verbatim}\end{codeblock}
+
+The full suite, including the eight live fork tests, runs with:
+
+\begin{codeblock}\begin{verbatim}
+RPC_BASE_ALCHEMY=https://mainnet.base.org forge test -vv
+\end{verbatim}\end{codeblock}
+
+Recorded \texttt{forge test -vv} output, mapped to the test--theorem table above, is provided in \texttt{foundry/PROOF\_OUTPUT.md} and serves as the deterministic regression target.
+
+\subsection*{Theorem~\ref{thm:binding}: per-event jump (mock)}
+
+The seven mock-pool tests (\texttt{MasterEquationT1Mock}) verify Equations~\eqref{eq:lnew}--\eqref{eq:newdust} on \texttt{MockCLPoolV2}, a Solidity-internal pool with the V3-exact \texttt{TickMath} constants from \texttt{v3-core}. They cover the swap-free zero-standing-dust case (recovering the canonical residual of \cite{ryan2026siphon}~\S6 within 5\%), linear additivity on both bound and slack sides, the swap-corrected case both below and past the locus threshold (binding-side flip), the three positional sub-cases of the V3 amount functions, and multi-position recycle where one position's residual is consumed by another position's mint.
+
+\subsection*{Theorem~\ref{thm:binding}: per-event jump (Slipstream fork)}
+
+\texttt{MasterEquationT1Fork} runs four tests against the unmodified Aerodrome Slipstream \texttt{NonfungiblePositionManager}\footnote{\texttt{0x827922686190790b37229fd06084350E74485b72} on Base.}. The closed-form prediction is computed at the contemporaneous \texttt{slot0} sqrt-price and compared to the dust credit \texttt{ReferencePM} returns; predictions match emitted credits to within 1 wei (token0) and 1 raw unit (token1) on every event:
+
+\begin{table}[H]
+\centering
+\caption{Theorem~\ref{thm:binding} prediction error against Aerodrome Slipstream NFPM.}
+\label{tab:foundry-slipstream}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Test & Token & Predicted & Actual & Match \\
+\midrule
+swap-free, single rebalance     & WETH & 707         & 706         & --1 wei \\
+                                & USDC & 249{,}980{,}634   & 249{,}980{,}633   & --1 raw \\
+swap-corrected, single rebalance & --   & --          & --          & one side $\leq$ tol \\
+cross-pool absorption           & WETH & 706 $\to$ 151 & 706 $\to$ 151 & exact (event-level) \\
+3-event sequence (event 0)      & WETH & 70          & 69          & --1 wei \\
+                                & USDC & 142{,}456{,}348   & 142{,}456{,}347   & --1 raw \\
+3-event sequence (event 1)      & WETH & 595         & 594         & --1 wei \\
+                                & USDC & 58{,}204{,}099    & 58{,}204{,}098    & --1 raw \\
+3-event sequence (event 2)      & WETH & 705         & 704         & --1 wei \\
+                                & USDC & 249{,}980{,}632   & 249{,}980{,}631   & --1 raw \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The single-wei discrepancy on each row is the integer-arithmetic floor of the V3 amount-function inversion (\texttt{getAmountsForLiquidity} of \texttt{getLiquidityForAmounts}); the closed form is recovered to that floor on every event.
+
+\subsection*{Theorem~\ref{thm:binding}: per-event jump (Uniswap V3 fork)}
+
+\texttt{MasterEquationT1ForkUniV3} runs the same four tests against the canonical Uniswap V3 \texttt{NonfungiblePositionManager}\footnote{\texttt{0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1} on Base.} on the WETH/USDC fee-500 pool, using \texttt{ReferencePMUniV3}. Predictions match emitted credits to the same 1-wei tolerance:
+
+\begin{table}[H]
+\centering
+\caption{Theorem~\ref{thm:binding} prediction error against Uniswap V3 NFPM (Base, WETH/USDC fee~500).}
+\label{tab:foundry-univ3}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Test & Token & Predicted & Actual & Match \\
+\midrule
+swap-free, single rebalance     & WETH & 214         & 213         & --1 wei \\
+                                & USDC & 418{,}199{,}470   & 418{,}199{,}469   & --1 raw \\
+3-event sequence (event 0)      & WETH & 293         & 292         & --1 wei \\
+                                & USDC & 405{,}158{,}379   & 405{,}158{,}378   & --1 raw \\
+3-event sequence (event 1)      & WETH & 369         & 368         & --1 wei \\
+                                & USDC & 395{,}322{,}047   & 395{,}322{,}046   & --1 raw \\
+3-event sequence (event 2)      & WETH & 212         & 211         & --1 wei \\
+                                & USDC & 418{,}199{,}468   & 418{,}199{,}467   & --1 raw \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Uniswap V3 cross-pool test threads the depositor's standing dust ledger between Pool~1 (WETH/USDC fee~500) and Pool~2 (WETH/cbBTC fee~500); the connector token's standing dust is consumed by the second pool's mint per Equation~\eqref{eq:master}.
+
+\subsection*{Theorem~\ref{thm:extinction}: mass conservation}
+
+\texttt{MasterEquationT2} verifies the conservation form of Theorem~\ref{thm:extinction} on a two-position portfolio under a shared depositor-keyed dust ledger. Driven by 200 deterministically randomised swap-free rebalances at the GS canonical anchor sqrt-price, the per-token totals
+\[
+\sum_{k} a_{k,0}(t) + D_{\text{pool},T_0}(t), \qquad \sum_{k} a_{k,1}(t) + D_{\text{pool},T_1}(t)
+\]
+are preserved bit-exactly: \texttt{totalWETH} matches initial to the wei across $K=200$ events; \texttt{totalUSDC} matches to the raw unit. A second test verifies that Equation~\eqref{eq:master} threads the dust ledger correctly across rebalances of distinct positions, with the closed-form \eqref{eq:newdust} predicting the post-rebalance dust state on every event.
+
+The donor/absorber decomposition of Theorem~\ref{thm:extinction} is a population-level corollary verified empirically on V9 in Section~\ref{sec:framework_predictions} (eight of eight multi-pool portfolios) and is not directly Foundry-tested.
+
+\subsection*{Proposition~\ref{thm:connector}: Connector Rule sign}
+
+\texttt{MasterEquationConnectorRule} runs $K=80$ controlled rebalances with i.i.d.\ $\pm$300-tick signed displacements and computes
+\[
+\sum_{i=1}^{K} \mathrm{sign}(\delta_i) \cdot \mathrm{sign}\bigl( D_{\text{non-conn}}(\tau_i^+) - D_{\text{conn}}(\tau_i^+) \bigr)
+\]
+on two configurations. With the connector token at the $T_0$ position, the sum is $+18$; at the $T_1$ position, the sum is $-4$. Both signs match the prediction of Proposition~\ref{thm:connector}. The magnitude is bounded below in the proposition by the variance share of the connector-shared component in the per-pool displacement decomposition; the single-pool mock has no shared component, so the suite verifies the sign claim only. The empirical magnitude on V9 (Section~\ref{sec:framework_predictions}) is in the range $\pm0.42$ to $\pm0.44$ per-portfolio Spearman.
+
+\end{document}
