@@ -13,17 +13,17 @@ The paper is the multi-pool extension of *The Geometric Siphon*. Under a positio
 | **Foundry** | `forge` ≥ 1.5; Solidity 0.8.26 |
 | **Licence** | code MIT (`LICENSE`); paper PDF and LaTeX source © K. R. Ryan, all rights reserved |
 
-**Status.** SSRN abstract [6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218) submitted and pending approval; the preprint will be the citable record once visible. The Foundry verification suite reproduces every closed-form claim in the paper bit-exactly.
+**Status.** Preprint live on SSRN as [6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); the SSRN preprint is the citable record. The Foundry verification suite reproduces every closed-form claim in the paper bit-exactly.
 
 ## Paper
 
 | Title | Where | Status |
 |---|---|---|
-| The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos | [SSRN 6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); source in `paper/` | Preprint, pending SSRN approval |
+| The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos | [SSRN 6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); source in `paper/` | Preprint live on SSRN |
 
 ## Citation
 
-Cite the SSRN preprint once it goes live. The parent paper is the companion citation:
+Cite the SSRN preprint. The parent paper is the companion citation:
 
 ```bibtex
 @techreport{ryan2026hiddenmicrostructure,
