@@ -131,6 +131,10 @@
   \end{mdframed}%
 }
 \usepackage{hyperref}
+% Forbid mid-URL line breaks (split URLs extract as broken references on SSRN;
+% see programme tracker C26). Applied 2026-07-22.
+\def\UrlBreakPenalty{10000}
+\def\UrlBigBreakPenalty{10000}
 \hypersetup{
   colorlinks=true,
   allcolors=blue!50!black,
@@ -206,7 +210,7 @@ The geometric residual identified in the prior paper\cite{ryan2026siphon} takes 
 
 \section{Introduction}\label{sec:intro}
 
-A concentrated liquidity (CL) position holds two tokens within a sqrt-price range and must be rebalanced (withdrawn, optionally swap-corrected, and re-minted into a new range) whenever the price drifts outside that range. The V3 mint geometry fixes the input ratio at any sqrt-price inside the new range, so the supplied amounts almost never coincide exactly with what the new mint requires. Each rebalance therefore leaves a leftover on one side of the pair. On a stock \texttt{NonfungiblePositionManager} (NFPM), that leftover is simply returned to the depositor and disappears from the subsequent state of the manager. The architecture studied here departs from that default by retaining it in a depositor-keyed mapping shared across the depositor's positions, from which later mints may draw as standing input. It is this mapping that will be called the \emph{dust ledger}.
+A concentrated liquidity (CL) position holds two tokens within a sqrt-price range and must be rebalanced (withdrawn, optionally swap-corrected, and re-minted into a new range) whenever the price drifts outside that range.\footnote{On the deployed V9 implementation, rebalances in fact fire before exit, when the price reaches trigger lines a configured fraction of the range width inside the bounds; the trigger geometry is measured in a follow-on paper.\cite{ryan2026om} Nothing below depends on where the trigger sits, since the analysis conditions on the realised rebalance events.} The V3 mint geometry fixes the input ratio at any sqrt-price inside the new range, so the supplied amounts almost never coincide exactly with what the new mint requires. Each rebalance therefore leaves a leftover on one side of the pair. On a stock \texttt{NonfungiblePositionManager} (NFPM), that leftover is simply returned to the depositor and disappears from the subsequent state of the manager. The architecture studied here departs from that default by retaining it in a depositor-keyed mapping shared across the depositor's positions, from which later mints may draw as standing input. It is this mapping that will be called the \emph{dust ledger}.
 
 The prior paper\cite{ryan2026siphon} isolated the single-pool, swap-free leftover as a closed-form per-event residual. What matters here is that, once the leftover is retained and recycled across multiple pools, it is no longer merely the by-product of an individual rebalance. It becomes a shared state variable on the portfolio, coupling one position's residual to another position's mint. The question is then no longer only what residual a given rebalance leaves behind, but what law governs the evolution of the standing balance once the architecture itself recycles that balance across the portfolio.
 
@@ -482,7 +486,7 @@ Under the swap routing of Section~\ref{sec:swap}, the perfect-routing target pre
 
 \paragraph{Assumptions.}
 \begin{enumerate}[leftmargin=*,label=(A\arabic*$'$)]
-\item Slippage is i.i.d.\ from a law $\nu_\varepsilon$ on $[-K_{\min}, K_{\max}]$ with $K_{\min} < 1$, $K_{\max} < \infty$, finite second moment $\sigma_{\text{slip}}^2 := \mathrm{Var}(\varepsilon)$, and density bounded away from zero on a neighbourhood of the origin. The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}$ collapses the swap-correction noise to this single one-dimensional residual; no symmetry, zero-mean, or Gaussianity is assumed.
+\item Slippage is i.i.d.\ from a law $\nu_\varepsilon$ on $[-K_{\min}, K_{\max}]$ with $K_{\min} < 1$, $K_{\max} < \infty$, finite second moment $\sigma_{\text{slip}}^2 := \mathrm{Var}(\varepsilon)$, and density bounded away from zero on a neighbourhood of the origin. The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}$ collapses the swap-correction noise to this single one-dimensional residual; no symmetry, zero-mean, or Gaussianity is assumed.\footnote{Follow-on measurement refines this block empirically. On V9 the residual is direction-conditioned, with binding probability near $0.06$ to $0.10$ after up-moves against near $0.5$ after down-moves, the unconditional value being their mixture,\cite{ryan2026om} and the residual itself is the coarse-graining of a deterministic per-event map, a tick race in which direction enters through the sign of the corrective swap's impact, with serial dependence entering as pool-level persistence of the map's inputs rather than as ledger memory.\cite{ryan2026quant} The unconditional results here are unaffected; anything direction-resolved must carry the conditioning.}
 \setcounter{enumi}{1}
 \item[(A2)] Boundary trigger $\delta \sim \mathrm{Unif}(\{\pm w/2\})$ at each event, independent of past state and slippage.
 \item[(A3)] Homogeneous exchangeable spokes: parameters $(L, w, \lambda)$ and $\nu_\varepsilon$ shared. The heterogeneous case is treated as Conjecture~\ref{cor:hetero}.
@@ -933,7 +937,7 @@ The corrected per-spoke atom masses (Section~\ref{sec:limitations}) confirm the 
 
 The natural analytical candidates are quantitative McKean--Vlasov rates for jump systems with empirical-measure dependence~\cite{andreis2018,chaintron2022}, adapted to the discrete-event multi-token kernel of Theorem~\ref{thm:binding}. The joint law is therefore best treated as an open extension problem rather than a within-scope refinement: Propositions~\ref{thm:chaos2A}--\ref{thm:chaos2B} are exact under their respective assumption blocks, whereas the general portfolio graphs occupied by V9 in practice remain open.
 
-Three theoretical questions remain open, two of them now sharpened empirically. The single-pool swap-corrected fixed point is unchanged. The finite-$N$ rate of approach to the chaos limit (a quantitative question along the lines of \cite{andreis2018}) is constrained by simulation: on the homogeneous kernel the pairwise correlation sits below the Monte Carlo noise floor at every $N \geq 4$, so any rate statement must be extracted from the hub marginal's mixing rather than from spoke decorrelation. A closed form for $\rho_+$ under empirical V9 slippage remains open analytically, with its empirical shape now measured directly on the corrected reconstruction (half-normal-like bulk, median excess kurtosis near $48$, inherited from the heavy-tailed slippage law). A separate empirical direction concerns the directional-asymmetry result of the prior paper, which the per-pool swap-event tick stream of Section~\ref{sec:swap} now makes it possible to decompose into numéraire and drift components. The V9 data suggest that the asymmetry persists on volatile--volatile pairs (median $D^+/D^- = 1.11$, against $1.05$ on volatile--stable pairs), making that decomposition a natural next step. Even so, the most informative immediate extension would be cross-operator replication of the operational anchor of Section~\ref{sec:cross_version} on an independent deployment of the same architecture.
+Three theoretical questions remain open, two of them now sharpened empirically. The single-pool swap-corrected fixed point is unchanged. The finite-$N$ rate of approach to the chaos limit (a quantitative question along the lines of \cite{andreis2018}) is constrained by simulation: on the homogeneous kernel the pairwise correlation sits below the Monte Carlo noise floor at every $N \geq 4$, so any rate statement must be extracted from the hub marginal's mixing rather than from spoke decorrelation. A closed form for $\rho_+$ under empirical V9 slippage remains open analytically, with its empirical shape now measured directly on the corrected reconstruction (half-normal-like bulk, median excess kurtosis near $48$, inherited from the heavy-tailed slippage law). A separate empirical direction concerns the directional-asymmetry result of the prior paper, which the per-pool swap-event tick stream of Section~\ref{sec:swap} now makes it possible to decompose into numéraire and drift components. The V9 data suggest that the asymmetry persists on volatile--volatile pairs (median $D^+/D^- = 1.11$, against $1.05$ on volatile--stable pairs), making that decomposition a natural next step.\footnote{That decomposition has since been carried out. A follow-on paper\cite{ryan2026om} confirms the persistence on the full pinned window and attributes the volatile--volatile excess to asymmetric range placement, a grid-quantisation artefact converted through a first-passage law on the operator's trigger lines.} Even so, the most informative immediate extension would be cross-operator replication of the operational anchor of Section~\ref{sec:cross_version} on an independent deployment of the same architecture.\footnote{A companion paper\cite{ryan2026fingerprint} has since run the cross-operator programme for the trigger layer, recovering rebalancing trigger fractions from public chain data alone across 81 distinct operators, including a blind recovery on an independently run manager that matched the operator's subsequently disclosed configuration to grid resolution. The operational anchor of Section~\ref{sec:cross_version} itself remains validated on one contract family.}
 
 \section{Conclusion}\label{sec:conclusion}
 
@@ -944,13 +948,13 @@ The mechanism follows directly from the V3 amount equations once depositor-keyed
 \begin{thebibliography}{9}
 
 \bibitem{ryan2026siphon}
-Ryan, K.R. ``The Geometric Siphon.'' \emph{SSRN preprint 6686798} (2026) \url{https://ssrn.com/abstract=6686798}.
+Ryan, K.R. ``The Geometric Siphon: Existence, Equilibrium, and Directional Properties of the Residual in Concentrated Liquidity Portfolios.'' \emph{SSRN preprint 6686798} (2026) \url{https://ssrn.com/abstract=6686798}.
+
+\bibitem{ryan2026om}
+Ryan, K.R. ``Operator Microstructure: Decomposing the Directional Asymmetry of Concentrated Liquidity Dust Flows.'' \emph{SSRN preprint 7164459} (2026) \url{https://ssrn.com/abstract=7164459}.
 
 \bibitem{pi2026convexity}
 P., I. ``Convexity and Topology in Cross-Pool Dust Redistribution: Structural Edge in Active CL Management.'' \emph{SSRN preprint 6509938} (2026) \url{https://ssrn.com/abstract=6509938}.
-
-\bibitem{adams2021v3}
-Adams, H., Zinsmeister, N., Salem, M., Keefer, R., Robinson, D. ``Uniswap v3 Core.'' \emph{Uniswap Labs Technical Whitepaper} (2021) \url{https://uniswap.org/whitepaper-v3.pdf}.
 
 \bibitem{cartea2024}
 Cartea, \'A., Drissi, F., Monga, M. ``Decentralized Finance and Automated Market Making: Predictable Loss and Optimal Liquidity Provision.'' \emph{SIAM Journal on Financial Mathematics} (2024) \url{https://doi.org/10.1137/23M1602103}.
@@ -970,9 +974,6 @@ Graham, C., M\'el\'eard, S. ``Propagation of chaos for a fully connected loss ne
 \bibitem{chaintron2022}
 Chaintron, L.-P., Diez, A. ``Propagation of chaos: a review of models, methods and applications. I. Models and methods.'' \emph{Kinetic and Related Models} \textbf{15}(6), 895--1015 (2022). arXiv:2203.00446 \url{https://arxiv.org/abs/2203.00446}.
 
-\bibitem{andreis2018}
-Andreis, L., Dai Pra, P., Fischer, M. ``McKean--Vlasov limit for interacting systems with simultaneous jumps.'' \emph{Stochastic Analysis and Applications} \textbf{36}(6), 960--995 (2018). arXiv:1704.01052 \url{https://arxiv.org/abs/1704.01052}.
-
 \bibitem{kelly1979}
 Kelly, F.\,P. \emph{Reversibility and Stochastic Networks}. Wiley, Chichester (1979). Reprinted by Cambridge University Press, 2011.
 
@@ -981,6 +982,18 @@ Carmona, R., Delarue, F. \emph{Probabilistic Theory of Mean Field Games with App
 
 \bibitem{cardaliaguet2019}
 Cardaliaguet, P., Delarue, F., Lasry, J.-M., Lions, P.-L. \emph{The Master Equation and the Convergence Problem in Mean Field Games}. Annals of Mathematics Studies 201, Princeton University Press (2019) \url{https://press.princeton.edu/books/paperback/9780691193137/}.
+
+\bibitem{adams2021v3}
+Adams, H., Zinsmeister, N., Salem, M., Keefer, R., Robinson, D. ``Uniswap v3 Core.'' \emph{Uniswap Labs Technical Whitepaper} (2021) \url{https://uniswap.org/whitepaper-v3.pdf}.
+
+\bibitem{ryan2026quant}
+Ryan, K.R. ``Quantisation Microstructure: The Tick-Race Law of Rebalancing Dust.'' \emph{SSRN preprint 7166739} (2026) \url{https://ssrn.com/abstract=7166739}.
+
+\bibitem{andreis2018}
+Andreis, L., Dai Pra, P., Fischer, M. ``McKean--Vlasov limit for interacting systems with simultaneous jumps.'' \emph{Stochastic Analysis and Applications} \textbf{36}(6), 960--995 (2018). arXiv:1704.01052 \url{https://arxiv.org/abs/1704.01052}.
+
+\bibitem{ryan2026fingerprint}
+Ryan, K.R. ``Operator Fingerprinting: Recovering and Defending the Hidden Rebalancing Policy of Concentrated Liquidity Managers.'' \emph{SSRN preprint 7202340} (2026) \url{https://ssrn.com/abstract=7202340}.
 
 \end{thebibliography}
 

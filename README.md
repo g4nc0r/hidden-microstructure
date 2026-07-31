@@ -34,15 +34,19 @@ Cite the SSRN preprint. The parent paper is the companion citation:
   institution = {SSRN},
   number      = {6745218},
   year        = {2026},
+  doi         = {10.2139/ssrn.6745218},
   url         = {https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218}
 }
 
 @techreport{ryan2026siphon,
   author      = {Ryan, K. R.},
-  title       = {The Geometric Siphon},
+  title       = {The Geometric Siphon: Existence, Equilibrium, and Directional
+                 Properties of the Residual in Concentrated Liquidity
+                 Portfolios},
   institution = {SSRN},
   number      = {6686798},
   year        = {2026},
+  doi         = {10.2139/ssrn.6686798},
   url         = {https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6686798}
 }
 ```
@@ -63,7 +67,7 @@ RPC_BASE_ALCHEMY=https://mainnet.base.org forge test
 
 ```
 .
-├── paper/                      LaTeX source (master-equation.tex), figure, build PDF
+├── paper/                      LaTeX source (master-equation.tex), figures, build PDF
 ├── foundry/                    Foundry verification suite (19 tests, 5 contracts)
 │   ├── src/                      MockCLPool.sol, MockCLPoolV2.sol,
 │   │                             ReferencePM.sol (Slipstream wrapper),

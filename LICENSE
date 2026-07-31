@@ -19,3 +19,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------------
+SCOPE
+
+The MIT terms above cover the code in this repository: foundry/.
+
+They do not cover the paper, which ships under its own terms:
+
+  Paper PDF and LaTeX sources (paper/)
+    (c) 2026 K. R. Ryan. All rights reserved. Matches the terms of the
+    SSRN deposit (abstract 6745218).
+
+Copyright (c) 2026 K. R. Ryan. See the Licence entry in README.md.
+-------------------------------------------------------------------------------
