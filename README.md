@@ -2,7 +2,7 @@
 
 Paper source and Foundry verification code for *The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos* (K. R. Ryan, 2026).
 
-The paper is the multi-pool extension of *The Geometric Siphon*. Under a position manager that retains the per-event geometric residual in a depositor-keyed dust ledger shared across multiple pools, the residual stops being a per-rebalance leftover and becomes a hidden state variable coupling the portfolio. Theorem 1 (the Master Equation) gives the exact closed-form per-event jump law on any pool, Theorem 2 generalises zero-swap extinction to a per-token mass-conservation identity across multi-pool rebalances with a donor/absorber partition under heterogeneous arrival, and Proposition 1 promotes the prior paper's Connector Rule conjecture to a sign-keyed correlation. On the homogeneous hub-spoke topology, Propositions 2 and 3 establish a conditional propagation-of-chaos limit and a closed-form atom-mixture spoke marginal, with a half-normal special case under symmetric Gaussian slippage. A 19-test Foundry suite verifies the closed-form jump (Theorem 1), the conservation result (Theorem 2), and the Connector Rule sign (Proposition 1) against unmodified V3-compatible NFPMs on Base mainnet, with two parallel fork tracks against Aerodrome Slipstream and Uniswap V3 demonstrating cross-DEX equivalence.
+The paper is the multi-pool extension of *The Geometric Siphon*. Under a position manager that retains the per-event geometric residual in a depositor-keyed dust ledger shared across multiple pools, the residual stops being a per-rebalance leftover and becomes a hidden state variable coupling the portfolio. Theorem 1 (the Master Equation) gives the exact closed-form per-event jump law on any pool, Theorem 2 generalises zero-swap extinction to a per-token mass-conservation identity across multi-pool rebalances with a donor/absorber partition under heterogeneous arrival, and Proposition 1 promotes the prior paper's Connector Rule conjecture to a sign-keyed correlation. On the homogeneous hub-spoke topology, Propositions 2 and 3 establish a conditional propagation-of-chaos limit and a closed-form atom-mixture spoke marginal, with a half-normal special case under symmetric Gaussian slippage. A 19-test Foundry suite verifies the closed-form jump (Theorem 1), the conservation result (Theorem 2), and the Connector Rule sign (Proposition 1) against unmodified V3-compatible NFPMs on Base mainnet, with two parallel fork tracks against Aerodrome Slipstream and Uniswap V3 demonstrating cross-DEX equivalence. A Lean 4 formalisation against mathlib machine-checks the theorem layer over the reals, excluding the conditional propagation-of-chaos limit.
 
 | | |
 |---|---|
@@ -11,9 +11,10 @@ The paper is the multi-pool extension of *The Geometric Siphon*. Under a positio
 | **Companion paper** | [*The Geometric Siphon* (SSRN 6686798)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6686798) |
 | **Code DOI** | [![DOI](https://zenodo.org/badge/1234950601.svg)](https://doi.org/10.5281/zenodo.20115374) - Foundry verification suite |
 | **Foundry** | `forge` ≥ 1.5; Solidity 0.8.26 |
+| **Lean** | 4.32.2 via elan; mathlib pinned in `lean/lake-manifest.json` |
 | **Licence** | code MIT (`LICENSE`); paper PDF and LaTeX source © K. R. Ryan, all rights reserved |
 
-**Status.** Preprint live on SSRN as [6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); the SSRN preprint is the citable record. The Foundry verification suite reproduces every closed-form claim in the paper bit-exactly.
+**Status.** Preprint live on SSRN as [6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); the SSRN preprint is the citable record. The Foundry verification suite reproduces every closed-form claim in the paper bit-exactly. The Lean formalisation carries no `sorry` and passes a 55-check axiom audit.
 
 ## Paper
 
@@ -75,6 +76,10 @@ RPC_BASE_ALCHEMY=https://mainnet.base.org forge test
 │   ├── test/                     5 test contracts + helpers/ + interfaces/
 │   ├── PROOF_OUTPUT.md           captured forge test output
 │   └── README.md
+├── lean/                       Lean 4 formalisation of the theorem layer
+│   ├── MasterEquation/           shared definitions + seven theorem files
+│   ├── AxiomCheck.lean           axiom audit
+│   └── README.md
 ├── CITATION.cff
 ├── LICENSE
 └── README.md
@@ -102,3 +107,18 @@ RPC_BASE_ALCHEMY=https://mainnet.base.org forge test --match-contract MasterEqua
 ```
 
 Any Base RPC URL with archive support works in `RPC_BASE_ALCHEMY`. Fork tests are pinned to Base block `43_175_000` (matching the *Geometric Siphon* suite's pin), so captured numerical residuals are bit-reproducible. Forge caches RPC responses under `~/.foundry/cache`, so repeat runs are fast.
+
+## Lean formalisation
+
+[`lean/`](./lean/) machine-checks the theorem layer in Lean 4 against mathlib. Coverage is Theorem 1 in full, with the mint linear programme stated as an optimum over the feasible set rather than assumed, both boundary sub-cases, and the reduction of the single-pool swap-free corner to the prior paper; Theorem 2 in full, with the rebalance event declared as a structure whose fields are Appendix C's hypotheses, plus the deterministic core of the donor/absorber lemma; Proposition 1's per-rebalance binding side in full, and its sign-by-position prediction as a sign-keyed sample covariance under the boundary trigger; the Appendix D kernel layer, in which eq. (8) is derived from Theorem 1 rather than posited, together with the binding-side-reset contraction and the Foster-Lyapunov drift; and Proposition 3 as an exact measure identity with both displayed moments of Corollary 1.
+
+Proposition 2 and Lemma 2 are not formalised, since mathlib has no Meyn-Tweedie stationary-law theory and no propagation-of-chaos coupling machinery, and assumption (A4) remains an assumption. The full coverage table and the scope caveats are in [`lean/README.md`](./lean/README.md). The formalisation covers the idealised real-arithmetic model of the paper; the Foundry suite above remains the check against fixed-point pool arithmetic.
+
+```bash
+cd lean
+lake exe cache get   # one-off, fetches prebuilt mathlib (several GB)
+lake build
+
+# axiom audit: 55 checks, propext / Classical.choice / Quot.sound only, no sorry
+lake env lean AxiomCheck.lean
+```
