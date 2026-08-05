@@ -139,8 +139,8 @@
   colorlinks=true,
   allcolors=blue!50!black,
   pdfauthor={K.R. Ryan},
-  pdftitle={The Hidden Microstructure of Shared Balance Concentrated Liquidity},
-  pdfsubject={A Master Equation for the Dust Ledger and Propagation of Chaos},
+  pdftitle={The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos},
+  pdfsubject={Concentrated liquidity dust ledger dynamics, master equation and propagation of chaos},
   pdfkeywords={concentrated liquidity, geometric residual, propagation of chaos, interacting particle systems, multi-pool rebalancing, stochastic flow networks, dust ledger, Uniswap V3, Aerodrome, automated market maker, DeFi mechanism design}
 }
 
@@ -486,7 +486,7 @@ Under the swap routing of Section~\ref{sec:swap}, the perfect-routing target pre
 
 \paragraph{Assumptions.}
 \begin{enumerate}[leftmargin=*,label=(A\arabic*$'$)]
-\item Slippage is i.i.d.\ from a law $\nu_\varepsilon$ on $[-K_{\min}, K_{\max}]$ with $K_{\min} < 1$, $K_{\max} < \infty$, finite second moment $\sigma_{\text{slip}}^2 := \mathrm{Var}(\varepsilon)$, and density bounded away from zero on a neighbourhood of the origin. The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}$ collapses the swap-correction noise to this single one-dimensional residual; no symmetry, zero-mean, or Gaussianity is assumed.\footnote{Follow-on measurement refines this block empirically. On V9 the residual is direction-conditioned, with binding probability near $0.06$ to $0.10$ after up-moves against near $0.5$ after down-moves, the unconditional value being their mixture,\cite{ryan2026om} and the residual itself is the coarse-graining of a deterministic per-event map, a tick race in which direction enters through the sign of the corrective swap's impact, with serial dependence entering as pool-level persistence of the map's inputs rather than as ledger memory.\cite{ryan2026quant} The unconditional results here are unaffected; anything direction-resolved must carry the conditioning.}
+\item Slippage is i.i.d.\ from a law $\nu_\varepsilon$ on $[-K_{\min}, K_{\max}]$ with $K_{\min} < 1$, $K_{\max} < \infty$, finite second moment $\sigma_{\text{slip}}^2 := \mathrm{Var}(\varepsilon)$, and density bounded away from zero on a neighbourhood of the origin. The Pool.Swap routing conservation $\sigma_y^{\text{raw}} = -s^2\,\sigma_x^{\text{raw}}$ collapses the swap-correction noise to this single one-dimensional residual; no symmetry, zero-mean, or Gaussianity is assumed.\footnote{Follow-on measurement refines this block empirically.\cite{ryan2026om} On V9 the residual is direction-conditioned, with binding probability near $0.06$ to $0.10$ after up-moves against near $0.5$ after down-moves, the unconditional value being their mixture, and the residual itself is the coarse-graining of a deterministic per-event map, a tick race in which direction enters through the sign of the corrective swap's impact, with serial dependence entering as pool-level persistence of the map's inputs rather than as ledger memory. The unconditional results here are unaffected; anything direction-resolved must carry the conditioning.}
 \setcounter{enumi}{1}
 \item[(A2)] Boundary trigger $\delta \sim \mathrm{Unif}(\{\pm w/2\})$ at each event, independent of past state and slippage.
 \item[(A3)] Homogeneous exchangeable spokes: parameters $(L, w, \lambda)$ and $\nu_\varepsilon$ shared. The heterogeneous case is treated as Conjecture~\ref{cor:hetero}.
@@ -951,7 +951,7 @@ The mechanism follows directly from the V3 amount equations once depositor-keyed
 Ryan, K.R. ``The Geometric Siphon: Existence, Equilibrium, and Directional Properties of the Residual in Concentrated Liquidity Portfolios.'' \emph{SSRN preprint 6686798} (2026) \url{https://ssrn.com/abstract=6686798}.
 
 \bibitem{ryan2026om}
-Ryan, K.R. ``Operator Microstructure: Decomposing the Directional Asymmetry of Concentrated Liquidity Dust Flows.'' \emph{SSRN preprint 7164459} (2026) \url{https://ssrn.com/abstract=7164459}.
+Ryan, K.R. ``Operator \& Quantisation Microstructure: The Frequency and Value Channels of Concentrated Liquidity Dust Flows.'' \emph{SSRN preprint 7166739} (2026) \url{https://ssrn.com/abstract=7166739}.
 
 \bibitem{pi2026convexity}
 P., I. ``Convexity and Topology in Cross-Pool Dust Redistribution: Structural Edge in Active CL Management.'' \emph{SSRN preprint 6509938} (2026) \url{https://ssrn.com/abstract=6509938}.
@@ -985,9 +985,6 @@ Cardaliaguet, P., Delarue, F., Lasry, J.-M., Lions, P.-L. \emph{The Master Equat
 
 \bibitem{adams2021v3}
 Adams, H., Zinsmeister, N., Salem, M., Keefer, R., Robinson, D. ``Uniswap v3 Core.'' \emph{Uniswap Labs Technical Whitepaper} (2021) \url{https://uniswap.org/whitepaper-v3.pdf}.
-
-\bibitem{ryan2026quant}
-Ryan, K.R. ``Quantisation Microstructure: The Tick-Race Law of Rebalancing Dust.'' \emph{SSRN preprint 7166739} (2026) \url{https://ssrn.com/abstract=7166739}.
 
 \bibitem{andreis2018}
 Andreis, L., Dai Pra, P., Fischer, M. ``McKean--Vlasov limit for interacting systems with simultaneous jumps.'' \emph{Stochastic Analysis and Applications} \textbf{36}(6), 960--995 (2018). arXiv:1704.01052 \url{https://arxiv.org/abs/1704.01052}.
