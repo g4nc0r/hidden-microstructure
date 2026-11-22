@@ -1,30 +1,152 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/banner-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset=".github/banner-light.png" />
+    <img src=".github/banner-light.png" alt="The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos" width="100%" />
+  </picture>
+</p>
+
 # The Hidden Microstructure of Shared Balance Concentrated Liquidity
 
-Paper source and Foundry verification code for *The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos* (K. R. Ryan, 2026).
+[![Lean build](https://github.com/g4nc0r/hidden-microstructure/actions/workflows/lean.yml/badge.svg)](https://github.com/g4nc0r/hidden-microstructure/actions/workflows/lean.yml)
+[![Foundry tests](https://github.com/g4nc0r/hidden-microstructure/actions/workflows/foundry.yml/badge.svg)](https://github.com/g4nc0r/hidden-microstructure/actions/workflows/foundry.yml)
+[![SSRN](https://img.shields.io/badge/SSRN-6745218-1a5490)](https://doi.org/10.2139/ssrn.6745218)
+[![Code DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20115374.svg)](https://doi.org/10.5281/zenodo.20115374)
+![Lean](https://img.shields.io/badge/Lean-4.32.2-5e81ac)
+![Solidity](https://img.shields.io/badge/Solidity-0.8.26-363636?logo=solidity&logoColor=white)
+![Foundry](https://img.shields.io/badge/Foundry-24_tests-b7410e)
+![Licence](https://img.shields.io/badge/code-MIT-2e7d32)
 
-The paper is the multi-pool extension of *The Geometric Siphon*. Under a position manager that retains the per-event geometric residual in a depositor-keyed dust ledger shared across multiple pools, the residual stops being a per-rebalance leftover and becomes a hidden state variable coupling the portfolio. Theorem 1 (the Master Equation) gives the exact closed-form per-event jump law on any pool, Theorem 2 generalises zero-swap extinction to a per-token mass-conservation identity across multi-pool rebalances with a donor/absorber partition under heterogeneous arrival, and Proposition 1 promotes the prior paper's Connector Rule conjecture to a sign-keyed correlation. On the homogeneous hub-spoke topology, Propositions 2 and 3 establish a conditional propagation-of-chaos limit and a closed-form atom-mixture spoke marginal, with a half-normal special case under symmetric Gaussian slippage. A 19-test Foundry suite verifies the closed-form jump (Theorem 1), the conservation result (Theorem 2), and the Connector Rule sign (Proposition 1) against unmodified V3-compatible NFPMs on Base mainnet, with two parallel fork tracks against Aerodrome Slipstream and Uniswap V3 demonstrating cross-DEX equivalence. A Lean 4 formalisation against mathlib machine-checks the theorem layer over the reals, excluding the conditional propagation-of-chaos limit.
+Paper source, supplement, Lean formalisation, Foundry verification suite and model simulation for *The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos* (K. R. Ryan, 2026).
 
-| | |
+A manager of concentrated liquidity positions can keep what each rebalance leaves behind in one ledger, shared across the positions of a portfolio. The leftover of one position can then be drawn into a later mint of another position that holds the same token, and the ledger becomes a state that couples the positions. The paper studies that state at three levels. The first is exact: the change of the ledger at any rebalance, which token is left and what it is worth, and conservation and transfer identities across positions. The second is a model of N pools that share one token, with one position in each, in which the stationary ledger balances of the pools' other tokens become independent as N grows, at rate 1/N, and each is exactly zero with a probability given in closed form. The third sets the model against an exact simulation of the contract and against the chain record of one manager on Base, and reports where it holds and where it does not.
+
+The paper extends [*The Geometric Siphon*](https://github.com/g4nc0r/the-geometric-siphon) from one rebalance of one position to a ledger shared over many.
+
+## Where to start
+
+| If you want to | Go to |
 |---|---|
-| **Author** | K. R. Ryan, independent researcher |
-| **Contact** | [gancor.xyz](https://gancor.xyz) · ORCID [0009-0004-6295-7040](https://orcid.org/0009-0004-6295-7040) · code/reproduction questions via [GitHub Issues](https://github.com/g4nc0r/hidden-microstructure/issues) |
-| **Companion paper** | [*The Geometric Siphon* (SSRN 6686798)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6686798) |
-| **Code DOI** | [![DOI](https://zenodo.org/badge/1234950601.svg)](https://doi.org/10.5281/zenodo.20115374) - Foundry verification suite |
-| **Foundry** | `forge` ≥ 1.5; Solidity 0.8.26 |
-| **Lean** | 4.32.2 via elan; mathlib pinned in `lean/lake-manifest.json` |
-| **Licence** | code MIT (`LICENSE`); paper PDF and LaTeX source © K. R. Ryan, all rights reserved |
+| Read the paper | [`paper/master-equation.pdf`](./paper/master-equation.pdf), or [SSRN 6745218](https://doi.org/10.2139/ssrn.6745218) |
+| Read the supplement | [`supplement/`](./supplement/): simulation tables, the test suite scenario by scenario, and the proofs of Propositions 4 and 5 and Lemma 3 |
+| See what changed from the May and July 2026 versions | [`paper/changes-from-earlier-versions.pdf`](./paper/changes-from-earlier-versions.pdf) |
+| Check the proofs | [`lean/`](./lean/), 136 machine-checked statements |
+| Check the arithmetic against live pools | [`foundry/`](./foundry/), 24 tests, 12 on a Base fork against two position managers |
+| Run the model of §6 | [`simulation/`](./simulation/), the kernel under three residual laws, against the exact values of §6 and the tables of §7.1 |
 
-**Status.** Preprint live on SSRN as [6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); the SSRN preprint is the citable record. The Foundry verification suite reproduces every closed-form claim in the paper bit-exactly. The Lean formalisation carries no `sorry` and passes a 55-check axiom audit.
+## What is checked where
+
+| Result | Paper | Lean | Foundry, integer model | Foundry, Base fork |
+|---|---|---|---|---|
+| Theorem 1, the jump of the ledger | §4.1 | [`MasterJump`](./lean/MasterEquation/MasterJump.lean) | 8 tests | 4 tests on each manager |
+| Proposition 1, binding-side criterion | §5.1 | [`BindingSide`](./lean/MasterEquation/BindingSide.lean) | 1 test | 1 test on each manager, with Corollary 2 |
+| Corollary 1, swap-free rule | §5.1 | [`BindingSide`](./lean/MasterEquation/BindingSide.lean) | 2 tests | |
+| Corollary 2, swap-corrected rule | §5.1 | [`BindingSide`](./lean/MasterEquation/BindingSide.lean) | 1 test | the same test |
+| Theorem 2, conservation without a swap | §5.2 | [`Conservation`](./lean/MasterEquation/Conservation.lean) | none, by design | 1 test on each manager |
+| Lemma 1, transfers between positions | §5.2 | [`Transfers`](./lean/MasterEquation/Transfers.lean) | | |
+| The kernel of the model | §6.1 | [`DirectionKernel`](./lean/MasterEquation/DirectionKernel.lean), derived from Theorem 1 | | |
+| Lemma 2, stationary law | §6.1 | [`DirectionKernel`](./lean/MasterEquation/DirectionKernel.lean), the steps at one event only | | |
+| Proposition 2, independence at rate 1/N | §6.1 | [`DirectionKernel`](./lean/MasterEquation/DirectionKernel.lean), the first step of the proof only | | |
+| Proposition 3, the atom at zero, and its Gaussian case | §6.1 | [`DirectionKernel`](./lean/MasterEquation/DirectionKernel.lean), [`SpokeMarginal`](./lean/MasterEquation/SpokeMarginal.lean), [`GaussianMoment`](./lean/MasterEquation/GaussianMoment.lean), the identity at one event | | |
+| Proposition 4, unequal spokes | §6.2 | not formalised | | |
+| Proposition 5, a common direction | §6.2 | not formalised | | |
+| Lemma 3, zero indicators | §6.2 | not formalised | | |
+| Proposition S1, position size | supplement §7.4 | [`DirectionKernel`](./lean/MasterEquation/DirectionKernel.lean), parts (i) and (iii); (ii) and (iv) given the conditional means | | |
+
+The Lean proofs are in real arithmetic. The Foundry suite is the check against the integer arithmetic of the pool, and its fork tests state every prediction of Theorem 1 and compare it with the outcome by equality, to the base unit, on Aerodrome Slipstream and on Uniswap V3. The fork tests of Proposition 1 compare the value left with the proposition's expression to within 3%, the difference being the pool's fee and the swap's price impact, and those of Theorem 2 allow each total to fall by the one base unit a mint keeps. Theorem 2 has no test on the integer model because without custody of tokens it is an identity of the test's own bookkeeping.
+
+The statements of §6 concern laws over many rebalances. They are proved in the paper and the supplement, and tested there by simulation and by replays of the chain record. Lean covers what holds at a single event. What each Lean file covers, and what it leaves out, is listed in [`lean/README.md`](./lean/README.md).
 
 ## Paper
 
-| Title | Where | Status |
+| Version | Where | Status |
 |---|---|---|
-| The Hidden Microstructure of Shared Balance Concentrated Liquidity: A Master Equation for the Dust Ledger and Propagation of Chaos | [SSRN 6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218); source in `paper/` | Preprint live on SSRN |
+| The Hidden Microstructure of Shared Balance Concentrated Liquidity | [`paper/`](./paper/), [SSRN 6745218](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218) | Live preprint, revised November 2026 |
+| The same, version of July 2026 | repository history, commit `a39d5ef` | Replaced by the revision |
+| The same, version of May 2026 | repository history, tag `v1.0.0` | Replaced by the version of July 2026 |
+
+The November 2026 revision follows the revision of *The Geometric Siphon* and a check of this paper's own evidence against on-chain events. It differs from the versions of May and July 2026 in three main ways.
+
+- **Evidence.** Earlier versions read ranges and displacements from the operator's rebalance log. This version reads its token quantities from chain events: 152,719 rebalances, on 150,357 of which the per-event identity of Theorem 1 closes to the wei.
+- **Proposition 1.** It was a sign-keyed correlation, given as a form of the prior paper's Connector Rule. It is now a statement about the token one rebalance leaves, with a rule for the swap-free case and one for the swap-corrected case, and makes no claim about connectivity.
+- **The model.** Proposition 2 was conditional on two assumptions, (A4) and (A5). It is now proved from the kernel at rate 1/N. (A4) is not needed. (A5) was stated in total variation and does not hold in that form; an identity in ℓ¹, which is proved, takes its place. The kernel is written by direction, since the earlier assignment of sides did not follow from Theorem 1. Unequal spokes, a conjecture before, is Proposition 4 under a condition on the sizes.
+
+[`paper/changes-from-earlier-versions.pdf`](./paper/changes-from-earlier-versions.pdf) lists the principal statements that differ, with their earlier and present forms, and says where an earlier statement was wrong. One renumbering to note: Corollary 1 was the half-normal mixture and is now the swap-free rule.
+
+## Quick start
+
+```bash
+# Lean: build and audit (first run fetches prebuilt mathlib, several GB)
+cd lean
+lake exe cache get && lake build
+lake env lean AxiomCheck.lean
+cd ..
+
+# Foundry: 12 tests on the integer pool model, no network (from the repository root)
+cd foundry
+git submodule update --init --recursive
+forge test --no-match-contract Fork
+
+# Foundry: all 24 tests, 12 against Aerodrome Slipstream and Uniswap V3 on a Base fork
+RPC_BASE_ALCHEMY=https://mainnet.base.org forge test
+cd ..
+
+# Simulation of the model: exact check, then the tables (needs NumPy)
+cd simulation
+python3 check_exact.py
+python3 reproduce.py --quick
+```
+
+## Layout
+
+```
+.
+├── paper/              current paper (.pdf, .tex), changes from earlier versions, with a README
+├── supplement/         supplement to the paper (.pdf, .tex, one figure), with a README
+├── lean/               Lean 4 formalisation
+│   ├── MasterEquation/   shared definitions and seven result files
+│   ├── AxiomCheck.lean   axiom audit, 136 statements
+│   └── README.md         coverage by paper result, and scope
+├── foundry/            Foundry verification suite
+│   ├── src/              two reference position managers, two mock pools, interfaces
+│   ├── test/             8 test contracts in 4 files, and helpers
+│   ├── PROOF_OUTPUT.md   captured forge output, by statement, with a table of deliberate faults
+│   └── README.md
+├── simulation/         the model chain of §6 in Python
+│   ├── kernel.py, laws.py   the kernel, three residual laws and their exact constants
+│   ├── reproduce.py, check_exact.py
+│   └── README.md
+├── CITATION.cff
+├── LICENSE
+└── README.md
+```
+
+## Lean formalisation
+
+[`lean/`](./lean/) holds machine-checked proofs in Lean 4 against mathlib. Theorems 1 and 2, Proposition 1 with Corollaries 1 and 2, and Lemma 1 are proved in full. For the model, the kernel is derived from Theorem 1 and what follows from it at a single event is proved: the steps on which Lemma 2 rests, the identity behind the atom of Proposition 3, the first step of the proof of Proposition 2, and parts of Proposition S1. The stationary law, the rate of Proposition 2, Propositions 4 and 5 and Lemma 3 are not formalised. The axiom audit covers 136 statements, each depending only on `propext`, `Classical.choice` and `Quot.sound`.
+
+## Foundry verification suite
+
+[`foundry/`](./foundry/) holds 24 tests across 8 contracts, covering Theorems 1 and 2 and Proposition 1 with its corollaries. Twelve run on an integer model of a V3 mint and burn with no network access. Twelve run on a Base fork pinned to block `43_175_000` (10 March 2026, 10:42 UTC), six against the unmodified Aerodrome Slipstream position manager and six against the unmodified Uniswap V3 one, each wrapped by a reference manager that adds the shared ledger. The fork tests of Theorem 1 predict the liquidity minted and both ledger entries and compare by equality, before the transaction where there is no swap and from the swap's own event where there is one. The continuous-integration badge covers the twelve network-free tests. Any Base RPC with archive support works in `RPC_BASE_ALCHEMY`. The captured output, and which tests fail under each of twelve deliberate faults, are in [`foundry/PROOF_OUTPUT.md`](./foundry/PROOF_OUTPUT.md).
+
+## Simulation
+
+[`simulation/`](./simulation/) holds the hub-spoke kernel of §6 and the three synthetic residual laws of §7.1 (Gaussian, uniform, skewed), in Python with NumPy. One script checks the float kernel against the same rule in exact rational arithmetic, with the side rule, the bound on the balances and the ℓ¹ identity behind Lemma 2 asserted at every event. Another reproduces, at laptop scale, the mass at zero against *q*, the mean balances and the covariances against their exact values, the dependence between spokes at order 1/*N*, the Gaussian case against the half-normal law, and the contraction rate against Lemma 2. Lean does not cover these laws, so this is the check of them a reader can run. See [`simulation/README.md`](./simulation/README.md).
+
+## Supplement
+
+[`supplement/`](./supplement/) holds material the paper cites and does not print: the tables behind its simulations, the steps of the leftover by portfolio, the first set of replays, the test suite scenario by scenario, the coverage of the formalisation statement by statement, the proofs of Propositions 4 and 5 and Lemma 3, and the statement on position size with its proof (Proposition S1).
+
+## What is not here
+
+The chain record of §8 is derived from public contract and pool events on Base. Its derived files, the residual law measured on it, the simulations of the contract of §7.2, the replay scripts and the test specifications fixed in advance are not published. The exact engine that the contract simulations extend is in the repository of *The Geometric Siphon*, under `simulator/`.
 
 ## Citation
 
-Cite the SSRN preprint. The parent paper is the companion citation:
+Cite the preprint. A `CITATION.cff` with the same metadata is at the repository root.
+
+<details>
+<summary>BibTeX</summary>
 
 ```bibtex
 @techreport{ryan2026hiddenmicrostructure,
@@ -52,73 +174,12 @@ Cite the SSRN preprint. The parent paper is the companion citation:
 }
 ```
 
-A `CITATION.cff` with the same metadata is included at the repository root.
+</details>
 
-## Quick start
+## Author and licence
 
-```bash
-# Foundry suite (19 tests, ~3s mock + ~1min fork)
-cd foundry
-git submodule update --init --recursive
-RPC_BASE_ALCHEMY=https://mainnet.base.org forge test
-# expected: Suite result: ok. ... 19 tests passed, 0 failed, 0 skipped
-```
-
-## Layout
-
-```
-.
-├── paper/                      LaTeX source (master-equation.tex), figures, build PDF
-├── foundry/                    Foundry verification suite (19 tests, 5 contracts)
-│   ├── src/                      MockCLPool.sol, MockCLPoolV2.sol,
-│   │                             ReferencePM.sol (Slipstream wrapper),
-│   │                             ReferencePMUniV3.sol (Uniswap V3 wrapper)
-│   ├── test/                     5 test contracts + helpers/ + interfaces/
-│   ├── PROOF_OUTPUT.md           captured forge test output
-│   └── README.md
-├── lean/                       Lean 4 formalisation of the theorem layer
-│   ├── MasterEquation/           shared definitions + seven theorem files
-│   ├── AxiomCheck.lean           axiom audit
-│   └── README.md
-├── CITATION.cff
-├── LICENSE
-└── README.md
-```
-
-## Foundry verification suite
-
-19 tests across 5 contracts. Eleven mock-pool tests are network-free and verify Theorem 1, Theorem 2, and Proposition 1 against the V3-exact tick math directly. Eight live fork tests, all pinned to Base block `43_175_000`, verify Theorem 1 against two unmodified V3-compatible `NonfungiblePositionManager` contracts on Base. The two parallel fork tracks (Aerodrome Slipstream and Uniswap V3) demonstrate cross-DEX equivalence: closed-form predictions match actuals to within 1 wei on every event on both DEXes. Test-to-section mapping is in [`foundry/PROOF_OUTPUT.md`](./foundry/PROOF_OUTPUT.md); a per-contract description is in [`foundry/README.md`](./foundry/README.md).
-
-```bash
-cd foundry
-git submodule update --init --recursive   # first time only
-
-# Mock-pool tests only, no network access required (11 tests)
-forge test -vv --no-match-contract Fork
-
-# Full suite, including 8 live fork tests on Base (19 tests)
-RPC_BASE_ALCHEMY=https://mainnet.base.org forge test -vv
-
-# Slipstream fork tests only
-RPC_BASE_ALCHEMY=https://mainnet.base.org forge test --match-contract MasterEquationT1Fork$ -vv
-
-# Uniswap V3 fork tests only
-RPC_BASE_ALCHEMY=https://mainnet.base.org forge test --match-contract MasterEquationT1ForkUniV3 -vv
-```
-
-Any Base RPC URL with archive support works in `RPC_BASE_ALCHEMY`. Fork tests are pinned to Base block `43_175_000` (matching the *Geometric Siphon* suite's pin), so captured numerical residuals are bit-reproducible. Forge caches RPC responses under `~/.foundry/cache`, so repeat runs are fast.
-
-## Lean formalisation
-
-[`lean/`](./lean/) machine-checks the theorem layer in Lean 4 against mathlib. Coverage is Theorem 1 in full, with the mint linear programme stated as an optimum over the feasible set rather than assumed, both boundary sub-cases, and the reduction of the single-pool swap-free corner to the prior paper; Theorem 2 in full, with the rebalance event declared as a structure whose fields are Appendix C's hypotheses, plus the deterministic core of the donor/absorber lemma; Proposition 1's per-rebalance binding side in full, and its sign-by-position prediction as a sign-keyed sample covariance under the boundary trigger; the Appendix D kernel layer, in which eq. (8) is derived from Theorem 1 rather than posited, together with the binding-side-reset contraction and the Foster-Lyapunov drift; and Proposition 3 as an exact measure identity with both displayed moments of Corollary 1.
-
-Proposition 2 and Lemma 2 are not formalised, since mathlib has no Meyn-Tweedie stationary-law theory and no propagation-of-chaos coupling machinery, and assumption (A4) remains an assumption. The full coverage table and the scope caveats are in [`lean/README.md`](./lean/README.md). The formalisation covers the idealised real-arithmetic model of the paper; the Foundry suite above remains the check against fixed-point pool arithmetic.
-
-```bash
-cd lean
-lake exe cache get   # one-off, fetches prebuilt mathlib (several GB)
-lake build
-
-# axiom audit: 55 checks, propext / Classical.choice / Quot.sound only, no sorry
-lake env lean AxiomCheck.lean
-```
+| | |
+|---|---|
+| **Author** | K. R. Ryan, independent researcher |
+| **Contact** | [gancor.xyz](https://gancor.xyz) · ORCID [0009-0004-6295-7040](https://orcid.org/0009-0004-6295-7040) · code and reproduction questions via [GitHub Issues](https://github.com/g4nc0r/hidden-microstructure/issues) |
+| **Licence** | code MIT (`LICENSE`); paper and supplement PDFs and LaTeX sources © K. R. Ryan, all rights reserved |

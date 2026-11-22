@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 K.R. Ryan
+Copyright (c) 2026 K. R. Ryan
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,13 @@ SOFTWARE.
 -------------------------------------------------------------------------------
 SCOPE
 
-The MIT terms above cover the code in this repository: foundry/ and lean/.
+The MIT terms above cover the code in this repository: foundry/, lean/ and
+simulation/.
 
-They do not cover the paper, which ships under its own terms:
+They do not cover the paper or its supplement, which ship under their own
+terms:
 
-  Paper PDF and LaTeX sources (paper/)
+  Paper PDFs and LaTeX sources (paper/), and the supplement (supplement/)
     (c) 2026 K. R. Ryan. All rights reserved. Matches the terms of the
     SSRN deposit (abstract 6745218).
 

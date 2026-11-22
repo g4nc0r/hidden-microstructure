@@ -1,7 +1,6 @@
 /-
-Theorem 2 (multi-pool mass conservation under S = 0), §5.2, proved in
-Appendix C, together with the deterministic core of the donor/absorber
-remark and of Lemma 1.
+Theorem 2 (multi-pool mass conservation without a swap), with two accounting
+identities over a window that the file on transfers (Lemma 1) uses.
 
 The portfolio is a finite family of positions indexed by `κ` over a finite
 token set `ι`. `a k i` is position `k`'s implied amount of token `i` at the
@@ -19,11 +18,11 @@ open Finset
 
 variable {ι κ : Type*} [Fintype κ]
 
-/-- Per-token total across positions and the dust ledger, eq. (7). -/
+/-- Per-token total across positions and the dust ledger, `M_i`. -/
 noncomputable def totalMass (a : κ → ι → ℝ) (D : ι → ℝ) (i : ι) : ℝ :=
   (∑ k, a k i) + D i
 
-/-- Fixed-price USD aggregate of the portfolio and the ledger, §5.2. -/
+/-- Fixed-price USD aggregate of the portfolio and the ledger. -/
 noncomputable def totalValue [Fintype ι] (a : κ → ι → ℝ) (D : ι → ℝ)
     (p : ι → ℝ) : ℝ :=
   ∑ i, totalMass a D i * p i
@@ -53,13 +52,13 @@ structure Rebalance (ι κ : Type*) [Fintype κ] where
   other_positions : ∀ k, k ≠ k₀ → a' k = a k
   /-- the rebalanced position holds nothing outside its own pool -/
   own_pool : ∀ i, i ≠ ta → i ≠ tb → a' k₀ i = a k₀ i
-  /-- swap-free mint inputs recycle the pool's standing dust, eq. (2) -/
+  /-- swap-free mint inputs recycle the pool's standing dust -/
   mint_x : a' k₀ ta = Lnew (a k₀ ta + D ta) (a k₀ tb + D tb) gx gy * gx
   mint_y : a' k₀ tb = Lnew (a k₀ ta + D ta) (a k₀ tb + D tb) gx gy * gy
-  /-- the leftover is credited to the ledger, eq. (4) and (5) -/
+  /-- the leftover is credited to the ledger -/
   credit_x : D' ta = dustX (a k₀ ta + D ta) (a k₀ tb + D tb) gx gy
   credit_y : D' tb = dustY (a k₀ ta + D ta) (a k₀ tb + D tb) gx gy
-  /-- ledger entries for tokens outside the pool are untouched, eq. (5) -/
+  /-- ledger entries for tokens outside the pool are untouched -/
   ledger_other : ∀ i, i ≠ ta → i ≠ tb → D' i = D i
 
 namespace Rebalance
@@ -71,7 +70,7 @@ private lemma sum_split [DecidableEq κ] (f : κ → ℝ) :
     ∑ k, f k = (∑ k ∈ univ.erase e.k₀, f k) + f e.k₀ :=
   (Finset.add_sum_erase _ f (mem_univ e.k₀)).symm.trans (add_comm _ _)
 
-/-- **Theorem 2.** Under `S = 0`, the per-token total of position amounts and
+/-- **Theorem 2.** Without a swap, the per-token total of position amounts and
 the dust ledger is invariant across the rebalance, evaluated at the
 contemporaneous sqrt price. -/
 theorem mass_conservation (i : ι) :
@@ -103,10 +102,12 @@ theorem value_conservation [Fintype ι] (p : ι → ℝ) :
 
 end Rebalance
 
-/-! ## Donor/absorber decomposition (remark after Theorem 2, Lemma 1) -/
+/-! ## Accounting over a window -/
 
-/-- The accounting identity behind the donor/absorber remark: over any window,
-the cumulative position impacts and the change in ledger value sum to zero. -/
+/-- Over any window in which the fixed-price aggregate is conserved, the
+cumulative changes in position value and the change in ledger value sum to
+zero. The change in a position's value is not the transfer of Lemma 1; see
+`Transfers.value_change`. -/
 theorem impacts_add_ledger_change_eq_zero [Fintype ι]
     {a₀ a₁ : κ → ι → ℝ} {D₀ D₁ : ι → ℝ} {p : ι → ℝ}
     (h : totalValue a₁ D₁ p = totalValue a₀ D₀ p) :
@@ -133,11 +134,9 @@ theorem impacts_add_ledger_change_eq_zero [Fintype ι]
   rw [hk, hd]
   linarith
 
-/-- **Deterministic core of Lemma 1.** Once the conservation constraint forces
-the cumulative impacts to sum to zero, any departure from the all-zero
-profile is necessarily a non-trivial donor/absorber partition: at least one
-strict donor and at least one strict absorber. What Lemma 1 adds is the
-probabilistic statement that the all-zero profile is not the typical one. -/
+/-- Quantities that sum to zero are either all zero or include a strictly
+positive and a strictly negative one. Used for Lemma 1(ii) in
+`Transfers.receiver_and_giver`. -/
 theorem mixed_sign_of_sum_zero {α : Type*} {s : Finset α} {f : α → ℝ}
     (hsum : ∑ k ∈ s, f k = 0) {k₁ : α} (hk₁ : k₁ ∈ s) (hne : f k₁ ≠ 0) :
     (∃ k ∈ s, 0 < f k) ∧ (∃ k ∈ s, f k < 0) := by

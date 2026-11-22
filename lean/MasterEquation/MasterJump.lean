@@ -1,13 +1,13 @@
 /-
-Theorem 1 (Master Equation jump), §4.1, proved in Appendix A.
+Theorem 1 (Master Equation jump).
 
 The mint is a one-dimensional linear programme; `Lnew` is its optimum, the
 dust credits are the slack, and the LP-min structure forces at least one of
 them to vanish in the swap-free regime, with exactly one vanishing off the
 ratio-preserving locus.
 
-The boundary sub-cases (ii) and (iii) of Appendix A lie outside the
-theorem's hypothesis and are recorded here for completeness, as in the paper.
+The boundary sub-cases (ii) and (iii) of the theorem's proof lie outside its
+hypothesis and are recorded here for completeness, as in the paper.
 -/
 import MasterEquation.Defs
 
@@ -17,9 +17,9 @@ namespace MasterEquation
 
 variable {xh yh gx gy : ℝ}
 
-/-! ## The mint as a linear programme (Appendix A, eq. A.1) -/
+/-! ## The mint as a linear programme -/
 
-/-- **Theorem 1, eq. (3).** In range (`gx, gy > 0`) the closed form
+/-- **Theorem 1, the new liquidity.** In range (`gx, gy > 0`) the closed form
 `L_new = min (x̂ / g_x) (ŷ / g_y)` is the optimum of the mint LP. -/
 theorem lnew_isGreatest (hgx : 0 < gx) (hgy : 0 < gy) (hx : 0 ≤ xh) (hy : 0 ≤ yh) :
     IsGreatest (mintFeasible xh yh gx gy) (Lnew xh yh gx gy) := by
@@ -34,7 +34,7 @@ theorem lnew_isGreatest (hgx : 0 < gx) (hgy : 0 < gy) (hx : 0 ≤ xh) (hy : 0 �
   · rintro L ⟨_, hLx, hLy⟩
     exact le_min ((le_div_iff₀ hgx).mpr hLx) ((le_div_iff₀ hgy).mpr hLy)
 
-/-! ## The dust credits (Theorem 1, eq. (4)) -/
+/-! ## The new ledger entries (Theorem 1) -/
 
 /-- Both dust credits are non-negative: the mint never over-spends. -/
 theorem dust_nonneg (hgx : 0 < gx) (hgy : 0 < gy) (hx : 0 ≤ xh) (hy : 0 ≤ yh) :
@@ -89,8 +89,8 @@ theorem dust_mul_eq_zero (hgx : 0 < gx) (hgy : 0 < gy) :
   · exact mul_eq_zero_of_right _ ((dustY_eq_zero_iff hgx hgy).mpr h)
 
 /-- **Theorem 1, ratio-preserving locus.** Both credits vanish exactly on
-`x̂ / ŷ = g_x / g_y`; this is the measure-zero locus of Theorem 1 of the
-prior paper, and the routing target of the swap step. -/
+`x̂ / ŷ = g_x / g_y`, the ratio-preserving locus and the routing target of the
+swap step. -/
 theorem dust_both_zero_iff (hgx : 0 < gx) (hgy : 0 < gy) :
     (dustX xh yh gx gy = 0 ∧ dustY xh yh gx gy = 0) ↔ xh * gy = yh * gx := by
   rw [dustX_eq_zero_iff hgx hgy, dustY_eq_zero_iff hgx hgy]
@@ -112,8 +112,8 @@ theorem exactly_one_dust_zero (hgx : 0 < gx) (hgy : 0 < gy) (hx : 0 ≤ xh)
     intro hzero
     exact absurd ((dustX_eq_zero_iff hgx hgy).mp hzero) (not_le.mpr h)
 
-/-- The slack-side leftover in closed form when token 0 binds
-(Appendix A, sub-case (i)): `y'_dust = ŷ - x̂ (g_y / g_x)`. -/
+/-- The slack-side leftover in closed form when token 0 binds:
+`y'_dust = ŷ - x̂ (g_y / g_x)`. -/
 theorem slack_leftover_of_token0_binds (hgx : 0 < gx) (hgy : 0 < gy)
     (h : xh * gy ≤ yh * gx) :
     dustY xh yh gx gy = yh - xh * (gy / gx) := by
@@ -136,7 +136,37 @@ theorem dust_add_eq_abs_sub (hgx : 0 < gx) (hgy : 0 < gy) (hg : gx = gy) :
       abs_of_nonneg (by linarith)]
     ring
 
-/-! ## Boundary sub-cases (Appendix A, sub-cases (ii) and (iii)) -/
+/-- **Proportional requirements.** When the new range takes the two tokens in
+a fixed ratio, `g_y = r g_x` (`r = s²` for a range centred on the price in tick
+space, `r = 1` in common units), the credits are the positive and negative
+parts of the imbalance of the inputs, measured in token 1. No sign condition
+on the inputs is used. -/
+theorem dust_of_proportional_requirements {r : ℝ} (hgx : 0 < gx) (hr : 0 < r)
+    (hg : gy = r * gx) :
+    dustY xh yh gx gy = max (yh - r * xh) 0 ∧
+      r * dustX xh yh gx gy = max (r * xh - yh) 0 := by
+  subst hg
+  have hrg : 0 < r * gx := mul_pos hr hgx
+  have hL : Lnew xh yh gx (r * gx) = min (r * xh) yh / (r * gx) := by
+    unfold Lnew
+    rw [← min_div_div_right hrg.le]
+    congr 1
+    field_simp
+  have hX : r * dustX xh yh gx (r * gx) = r * xh - min (r * xh) yh := by
+    unfold dustX
+    rw [hL]
+    field_simp
+  have hY : dustY xh yh gx (r * gx) = yh - min (r * xh) yh := by
+    unfold dustY
+    rw [hL, div_mul_cancel₀ _ hrg.ne']
+  rw [hX, hY]
+  rcases le_total (r * xh) yh with h | h
+  · rw [min_eq_left h, sub_self, max_eq_left (by linarith), max_eq_right (by linarith)]
+    exact ⟨rfl, rfl⟩
+  · rw [min_eq_right h, sub_self, max_eq_right (by linarith), max_eq_left (by linarith)]
+    exact ⟨rfl, rfl⟩
+
+/-! ## Boundary sub-cases (ii) and (iii) of the proof -/
 
 /-- Sub-case (ii), `s ≤ s_a'`: only the token-0 constraint is active, the new
 position is single-sided in token 0, and the whole token-1 input is left as
@@ -158,12 +188,12 @@ theorem lp_above_range (hgy : 0 < gy) (hx : 0 ≤ xh) (hy : 0 ≤ yh) :
   rintro L ⟨-, -, hLy⟩
   exact (le_div_iff₀ hgy).mpr hLy
 
-/-! ## The single-pool swap-free corner (§4.2) -/
+/-! ## The single-pool swap-free corner -/
 
 /-- **Corner reduction.** With one position, no standing dust and no swap
 correction, the Master Equation mint reduces to the isolated-case mint
-minimum of the prior paper (Geometric Siphon, eq. 6), which is the corner in
-which Theorems 1 and 3 there are recovered. -/
+minimum of the prior paper (The Geometric Siphon), which is the corner in
+which the geometric residual there is recovered. -/
 theorem lnew_gs_corner {L s sa sb sa' sb' : ℝ} (h1 : sa < s) (h2 : s < sb)
     (h1' : sa' < s) (h2' : s < sb') :
     Lnew (L * ax s sa sb) (L * ay s sa sb) (ax s sa' sb') (ay s sa' sb')

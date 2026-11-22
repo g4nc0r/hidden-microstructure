@@ -6,7 +6,8 @@ import {MockCLPool} from "./MockCLPool.sol";
 /// @title MockCLPoolV2
 /// @notice Same liquidity math as MockCLPool, but `getSqrtRatioAtTick` is the
 ///         exact Uniswap V3 TickMath function (verbatim constants from
-///         v3-core). Used where quantitative accuracy matters (Theorems 4-6).
+///         v3-core). Used where quantitative accuracy matters (Theorems 4 to 6 of the
+///         prior paper, The Geometric Siphon, from whose suite this file comes).
 contract MockCLPoolV2 is MockCLPool {
     /// @dev `MockCLPool(0)` initialises the parent state with `tick = ANCHOR_TICK`
     ///      and `sqrtPriceX96 = 0`; we then overwrite both with the caller's

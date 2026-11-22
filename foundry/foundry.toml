@@ -7,7 +7,7 @@ optimizer = true
 optimizer_runs = 200
 via_ir = true
 
-# RPC for fork tests (MasterEquationT1Fork). Any working Base RPC URL with
+# RPC for the fork tests. Any working Base RPC URL with
 # archive support is sufficient; the public endpoint https://mainnet.base.org
 # works. Set RPC_BASE_ALCHEMY in your shell.
 [rpc_endpoints]

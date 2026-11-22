@@ -2,6 +2,7 @@
 **/out/
 **/cache/
 **/broadcast/
+**/foundry.lock
 
 # Node
 **/node_modules/

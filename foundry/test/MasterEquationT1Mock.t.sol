@@ -4,459 +4,308 @@ pragma solidity ^0.8.26;
 import {Test, console} from "forge-std/Test.sol";
 import {MockCLPoolV2} from "../src/MockCLPoolV2.sol";
 import {TickHelpers} from "./helpers/Tick.sol";
+import {V3Math} from "./helpers/V3Math.sol";
 
 /// @title MasterEquationT1Mock
-/// @notice Mock-pool, network-free verification of Theorem 1 of *The Master
-///         Equation for the Dust Ledger* (Ryan, 2026), the
-///         closed-form per-event jump
+/// @notice Network-free tests of Theorem 1, the per-event jump of the dust ledger:
 ///
-///                 L_new        = min(hat_x / g_x, hat_y / g_y)
-///                 x_dust' = hat_x - L_new * g_x
-///                 y_dust' = hat_y - L_new * g_y
+///             L_new   = min(hat_x / g_x, hat_y / g_y)
+///             x_dust' = hat_x - L_new g_x,   y_dust' = hat_y - L_new g_y
 ///
-///         where  hat_x = x_w + x_dust - sigma_x  (and similarly hat_y).
+///         with hat = withdrawn + standing balance - swap.
 ///
-/// Seven tests:
-///   1. swap-free, zero standing dust (recovers Geometric Siphon Theorem 1
-///      and the canonical ~2,061 USDC residual at the GS anchor setup);
-///   2. swap-free, non-zero x_dust on the bound side;
-///   3. swap-free, non-zero y_dust on the slack side (linear additivity);
-///   4. swap correction below the locus threshold (LP structure unchanged);
-///   5. swap overshoot past the locus (binding side flips);
-///   6. three positional sub-cases of the V3 amount functions
-///      (new range below s, above s, straddling s);
-///   7. multi-position recycle: Position A's residual is absorbed by
-///      Position B's mint via the depositor-keyed dust ledger.
+/// The pool is the integer model in `helpers/V3Math.sol` (liquidity as the position
+/// manager sizes it, amounts as the pool takes them), which the fork tests check
+/// against two unmodified position managers to the base unit. Each test here runs a
+/// mint through that model and checks it against the theorem by three statements that
+/// do not reuse the model's own formula for the liquidity:
+///
+///   - the liquidity minted is the largest both inputs allow (one more unit would
+///     need more of some token than was offered);
+///   - the token that binds is used up, to within what one unit of liquidity takes;
+///   - what is left of the other token is the offered amount less the binding
+///     amount times g_slack / g_binding, computed here in 512-bit arithmetic.
+///
+/// Token0 is called WETH and token1 USDC after the pool the paper's example uses.
+/// Values are in token1 units at the pool price.
 contract MasterEquationT1Mock is Test {
-    MockCLPoolV2 internal pool;
+    MockCLPoolV2 internal tickMath;
 
-    // V3-exact tick anchor at ~$2,500/WETH (matches GS NewTheoremsProof's
-    // BASE_TICK = 78244). MockCLPool's linear ANCHOR_TICK = 73135 is a
-    // different anchor for the linear approximation; with the V3-exact
-    // sqrt-price math of MockCLPoolV2 we use 78244.
+    // The anchor of the Geometric Siphon suite: a position opened at tick 78,244 into a
+    // range of 500 ticks either side, withdrawn after the price has moved 200 ticks up.
     int24 constant BASE_TICK = 78244;
-    int24 constant DISPLACED_TICK = 78444;        // BASE_TICK + 200 (GS canonical displacement)
+    int24 constant DISPLACED_TICK = 78444;
     int24 constant TICK_SPACING = 100;
 
-    struct T1Inputs {
-        int24 newLower;
-        int24 newUpper;
+    struct Setup {
+        uint160 s;
+        uint160 sa;
+        uint160 sb;
         uint256 wd0;
         uint256 wd1;
-        uint256 dust0Pre;
-        uint256 dust1Pre;
-        int256 sigma0;
-        int256 sigma1;
-    }
-
-    struct T1Prediction {
-        uint256 hat0;
-        uint256 hat1;
-        uint128 lNew;
-        uint256 used0;
-        uint256 used1;
-        uint256 dust0After;
-        uint256 dust1After;
     }
 
     function setUp() public {
-        pool = new MockCLPoolV2(BASE_TICK);
+        tickMath = new MockCLPoolV2(0);
     }
 
-    /// @dev Compute withdrawal amounts for a position created at BASE_TICK
-    ///      (1 WETH + 2,500 USDC into [BASE_TICK-500, BASE_TICK+500]) and
-    ///      then withdrawn after a +200-tick price displacement. Mutates
-    ///      pool state to leave it at DISPLACED_TICK on return.
-    function _gsCanonicalWithdraw(int24 oldLower, int24 oldUpper)
-        internal
-        returns (uint128 lOld, uint256 wd0, uint256 wd1)
-    {
-        pool.movePriceToTick(BASE_TICK);
-        lOld = pool.getLiquidityForAmounts(1 ether, 2500e6, oldLower, oldUpper);
-        pool.movePriceToTick(DISPLACED_TICK);
-        (wd0, wd1) = pool.getAmountsForLiquidity(lOld, oldLower, oldUpper);
-    }
-
-    /// @dev Closed-form Theorem 1 prediction. Computes
-    ///      hat = wd + dust_pre - sigma  on each token, then asks the V3
-    ///      amount functions for the new liquidity and the actual mint
-    ///      consumption. Leftover = hat - used, the Master Equation jump.
-    function _t1Predict(T1Inputs memory inp) internal view returns (T1Prediction memory pred) {
-        int256 h0 = int256(inp.wd0 + inp.dust0Pre) - inp.sigma0;
-        int256 h1 = int256(inp.wd1 + inp.dust1Pre) - inp.sigma1;
-        require(h0 >= 0 && h1 >= 0, "negative hat");
-        pred.hat0 = uint256(h0);
-        pred.hat1 = uint256(h1);
-        pred.lNew = pool.getLiquidityForAmounts(pred.hat0, pred.hat1, inp.newLower, inp.newUpper);
-        (pred.used0, pred.used1) = pool.getAmountsForLiquidity(pred.lNew, inp.newLower, inp.newUpper);
-        pred.dust0After = pred.hat0 - pred.used0;
-        pred.dust1After = pred.hat1 - pred.used1;
+    function _sqrt(int24 tick) internal view returns (uint160) {
+        return tickMath.getSqrtRatioAtTick(tick);
     }
 
     function _nearest(int24 t) internal pure returns (int24) {
         return TickHelpers.nearest(t, TICK_SPACING);
     }
 
-    /// @dev USD value of (a0, a1) at the GS anchor price ($2,500/WETH).
-    function _usd(uint256 a0, uint256 a1) internal pure returns (uint256) {
-        return (a0 * 2500e6) / 1 ether + a1;
+    /// @dev The anchor position withdrawn at the displaced price, and a new range of
+    ///      `halfWidth` ticks either side of that price.
+    function _anchor(int24 halfWidth) internal view returns (Setup memory u) {
+        uint160 sOpen = _sqrt(BASE_TICK);
+        uint160 oldA = _sqrt(_nearest(BASE_TICK - 500));
+        uint160 oldB = _sqrt(_nearest(BASE_TICK + 500));
+        uint128 lOld = V3Math.liquidityForAmounts(sOpen, oldA, oldB, 1 ether, 2500e6);
+        u.s = _sqrt(DISPLACED_TICK);
+        (u.wd0, u.wd1) = V3Math.amountsDown(u.s, oldA, oldB, lOld);
+        u.sa = _sqrt(_nearest(DISPLACED_TICK - halfWidth));
+        u.sb = _sqrt(_nearest(DISPLACED_TICK + halfWidth));
     }
 
-    // =========================================================================
-    // Test 1: swap-free, zero standing dust
-    // Recovers GS Theorem 1 and the canonical ~2,061 USDC residual.
-    // =========================================================================
+    /// @dev Mint (hat0, hat1) into [sa, sb] at an interior price and check the three
+    ///      statements of Theorem 1 listed in the contract note.
+    function _jump(uint160 s, uint160 sa, uint160 sb, uint256 hat0, uint256 hat1)
+        internal
+        pure
+        returns (V3Math.Jump memory j)
+    {
+        require(sa < s && s < sb, "price not interior");
+        j = V3Math.mint(s, sa, sb, hat0, hat1);
 
-    function test_t1_swapfree_zeroDust() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
+        // Largest liquidity both inputs allow.
+        (uint256 more0, uint256 more1) = V3Math.amountsUp(s, sa, sb, j.liquidity + 1);
+        assertTrue(more0 > hat0 || more1 > hat1, "eq:lnew: one more unit of liquidity is not affordable");
 
-        T1Prediction memory pred = _t1Predict(T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wd0,
-            wd1: wd1,
-            dust0Pre: 0,
-            dust1Pre: 0,
-            sigma0: 0,
-            sigma1: 0
-        }));
+        // The binding token is used up, to within one unit of liquidity.
+        (uint256 unit0, uint256 unit1) = V3Math.amountsUp(s, sa, sb, 1);
+        bool binds0 = more0 > hat0;
+        if (binds0) assertLe(j.left0, unit0, "eq:newdust: the binding token is used up");
+        else assertLe(j.left1, unit1, "eq:newdust: the binding token is used up");
 
-        // Note: pool sqrt-price is fixed at BASE_TICK in setUp; the test
-        // uses a +200-shifted new range to mirror the GS displacement
-        // scenario without mutating pool state.
-        console.log("dust0After (WETH):");
-        console.log(pred.dust0After);
-        console.log("dust1After (USDC):");
-        console.log(pred.dust1After);
-
-        // In the swap-free regime, exactly one of the two leftovers is
-        // non-trivially large; the other is rounding noise.
-        bool dust0Trivial = pred.dust0After < 1e12;        // <1 nano-WETH
-        bool dust1Trivial = pred.dust1After < 1e3;          // <0.001 USDC
-        assertTrue(dust0Trivial != dust1Trivial, "exactly one side carries the residual");
-
-        // The non-trivial side carries the bulk of the residual.
-        uint256 residualUSD = _usd(pred.dust0After, pred.dust1After);
-        console.log("Residual USD (6 decimals):");
-        console.log(residualUSD);
-        assertGt(residualUSD, 1900e6, "residual >= $1,900");
-        assertLt(residualUSD, 2200e6, "residual <= $2,200 (within ~5% of GS canonical 2,061)");
-    }
-
-    // =========================================================================
-    // Test 2: swap-free, non-zero standing dust on the bound side
-    // Adding to the bound side grows L_new; the slack-side leftover shrinks.
-    // =========================================================================
-
-    function test_t1_swapfree_nonzeroDust_boundSide() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
-
-        T1Inputs memory base = T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wd0,
-            wd1: wd1,
-            dust0Pre: 0,
-            dust1Pre: 0,
-            sigma0: 0,
-            sigma1: 0
-        });
-        T1Prediction memory base0 = _t1Predict(base);
-
-        // Identify bound side (WETH at the GS anchor displacement).
-        // Bound side has dust ~ 0; slack side carries the residual.
-        bool wethBound = base0.dust0After < base0.dust1After;
-        require(wethBound, "test assumes WETH is the bound side at GS anchor");
-
-        // Add 0.5 WETH to the bound side.
-        T1Inputs memory withDust = base;
-        withDust.dust0Pre = 0.5 ether;
-        T1Prediction memory pred = _t1Predict(withDust);
-
-        console.log("Base L_new:");
-        console.log(uint256(base0.lNew));
-        console.log("With 0.5 WETH dust, L_new:");
-        console.log(uint256(pred.lNew));
-        console.log("Base dust1After (USDC):");
-        console.log(base0.dust1After);
-        console.log("With dust dust1After (USDC):");
-        console.log(pred.dust1After);
-
-        // Adding to the bound side strictly increases L_new...
-        assertGt(pred.lNew, base0.lNew, "L_new grows when bound-side input grows");
-        // ...and strictly decreases the slack-side leftover (more bound side ->
-        // mint absorbs more of the slack token).
-        assertLt(pred.dust1After, base0.dust1After, "slack-side dust shrinks");
-    }
-
-    // =========================================================================
-    // Test 3: swap-free, non-zero standing dust on the slack side
-    // Linear additivity: slack-side leftover shifts by exactly the added dust.
-    // =========================================================================
-
-    function test_t1_swapfree_nonzeroDust_slackSide() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
-
-        T1Inputs memory base = T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wd0,
-            wd1: wd1,
-            dust0Pre: 0,
-            dust1Pre: 0,
-            sigma0: 0,
-            sigma1: 0
-        });
-        T1Prediction memory base0 = _t1Predict(base);
-
-        bool wethBound = base0.dust0After < base0.dust1After;
-        require(wethBound, "test assumes WETH is the bound side at GS anchor");
-
-        // Add 5,000 USDC to the slack side.
-        T1Inputs memory withDust = base;
-        uint256 added = 5000e6;
-        withDust.dust1Pre = added;
-        T1Prediction memory pred = _t1Predict(withDust);
-
-        console.log("Base dust1After:");
-        console.log(base0.dust1After);
-        console.log("With 5,000 USDC dust dust1After:");
-        console.log(pred.dust1After);
-
-        // L_new is unchanged: the slack side does not bind, so adding to it
-        // does not change the LP solve.
-        assertEq(pred.lNew, base0.lNew, "L_new unchanged when slack-side input grows");
-        // Slack-side leftover shifts by exactly the added amount.
-        assertEq(pred.dust1After, base0.dust1After + added, "linear additivity on the slack side");
-    }
-
-    // =========================================================================
-    // Test 4: swap correction toward the locus
-    // §4.2 of the paper: "x̂, ŷ shift linearly by (-σ_x, -σ_y) and the LP
-    // structure is unchanged." A swap moving inputs toward the ratio-preserving
-    // locus reduces the absolute residual; the LP closed form holds throughout
-    // (the binding side may flip, but Theorem 1's leftover identity is intact).
-    // =========================================================================
-
-    function test_t1_swap_belowThreshold() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
-
-        T1Inputs memory base = T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wd0,
-            wd1: wd1,
-            dust0Pre: 0,
-            dust1Pre: 0,
-            sigma0: 0,
-            sigma1: 0
-        });
-        T1Prediction memory base0 = _t1Predict(base);
-
-        // Small spot-price-ratio swap: 50 USDC paid, ~0.02 WETH received.
-        // Moves inputs toward the locus. Direction is USDC->WETH because
-        // USDC is the slack side at the GS displacement.
-        T1Inputs memory withSwap = base;
-        withSwap.sigma1 = 50e6;
-        withSwap.sigma0 = -int256(0.02 ether);
-        T1Prediction memory pred = _t1Predict(withSwap);
-
-        uint256 baseResidUSD = _usd(base0.dust0After, base0.dust1After);
-        uint256 newResidUSD = _usd(pred.dust0After, pred.dust1After);
-        console.log("Base residual (USD):");
-        console.log(baseResidUSD);
-        console.log("With swap residual (USD):");
-        console.log(newResidUSD);
-
-        // Closed-form Theorem 1 still holds with the swap-corrected inputs:
-        //   non-negative leftovers and exclusivity (one side near zero off the
-        //   ratio-preserving locus).
-        bool dust0Trivial = pred.dust0After < 1e15;        // <0.001 WETH
-        bool dust1Trivial = pred.dust1After < 1e3;          // <0.001 USDC
-        assertTrue(dust0Trivial != dust1Trivial, "exactly one side near zero post-swap");
-        // Swap toward locus reduces the absolute residual.
-        assertLt(newResidUSD, baseResidUSD, "swap toward locus reduces residual");
-    }
-
-    // =========================================================================
-    // Test 5: swap overshoot past the locus (binding side flips)
-    // A large swap converts more than the locus calls for; the formerly-slack
-    // token becomes the new bound side and the leftover flips to token0.
-    // =========================================================================
-
-    function test_t1_swap_overshoot() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
-
-        // Pre-seed sufficient dust to sustain a large swap correction.
-        // Without dust, sigma1 = 5,000 USDC would drive hat1 negative.
-        T1Inputs memory inp = T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wd0,
-            wd1: wd1,
-            dust0Pre: 0,
-            dust1Pre: 6000e6,            // 6,000 USDC standing dust
-            sigma1: 5000e6,              // pay 5,000 USDC into the pool
-            sigma0: -int256(2 ether)     // receive 2 WETH from the pool
-        });
-
-        T1Prediction memory pred = _t1Predict(inp);
-
-        console.log("Overshoot dust0After (WETH):");
-        console.log(pred.dust0After);
-        console.log("Overshoot dust1After (USDC):");
-        console.log(pred.dust1After);
-
-        // The huge WETH inflow flips the bound side: USDC now binds, WETH leaks.
-        assertGt(pred.dust0After, 0, "WETH leftover dominates after overshoot");
-        assertLt(pred.dust1After, 1e3, "USDC now bound (rounding noise)");
-    }
-
-    // =========================================================================
-    // Test 6: three positional sub-cases of the V3 amount functions
-    //   (a) new range entirely above s -> all-token0 mint;
-    //   (b) new range entirely below s -> all-token1 mint;
-    //   (c) new range straddles s     -> mixed mint.
-    // =========================================================================
-
-    function test_t1_threeSubcases() public {
-        // Withdraw amounts at the anchor s: a position fully inside an
-        // [BASE_TICK-500, BASE_TICK+500] range.
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        (uint128 lOld, uint256 wd0, uint256 wd1) = _gsCanonicalWithdraw(oldLower, oldUpper);
-        lOld;
-
-        // (a) new range entirely above s: all token0 needed.
-        {
-            T1Prediction memory pa = _t1Predict(T1Inputs({
-                newLower: _nearest(BASE_TICK + 1500),
-                newUpper: _nearest(BASE_TICK + 3500),
-                wd0: wd0, wd1: wd1, dust0Pre: 0, dust1Pre: 0, sigma0: 0, sigma1: 0
-            }));
-            console.log("Subcase (a) above-s: dust0/dust1 = ", pa.dust0After, pa.dust1After);
-            // All of token1 (USDC) leaks: the new range lies above s, so
-            // the mint at sqrt-price s is at the lower boundary of the new
-            // range and absorbs only token0 across that range.
-            assertEq(pa.dust1After, wd1, "above-s: token1 fully unabsorbed");
-        }
-
-        // (b) new range entirely below s: all token1 needed.
-        {
-            T1Prediction memory pb = _t1Predict(T1Inputs({
-                newLower: _nearest(BASE_TICK - 3500),
-                newUpper: _nearest(BASE_TICK - 1500),
-                wd0: wd0, wd1: wd1, dust0Pre: 0, dust1Pre: 0, sigma0: 0, sigma1: 0
-            }));
-            console.log("Subcase (b) below-s: dust0/dust1 = ", pb.dust0After, pb.dust1After);
-            assertEq(pb.dust0After, wd0, "below-s: token0 fully unabsorbed");
-        }
-
-        // (c) new range straddles s: both tokens needed.
-        {
-            T1Prediction memory pc = _t1Predict(T1Inputs({
-                newLower: _nearest(BASE_TICK - 1000),
-                newUpper: _nearest(BASE_TICK + 1000),
-                wd0: wd0, wd1: wd1, dust0Pre: 0, dust1Pre: 0, sigma0: 0, sigma1: 0
-            }));
-            console.log("Subcase (c) straddling: dust0/dust1 = ", pc.dust0After, pc.dust1After);
-            // Both leftovers are well below the wd amounts -- the mint
-            // absorbs material amounts of both.
-            assertLt(pc.dust0After, wd0 / 2, "straddling: token0 mostly absorbed");
-            assertLt(pc.dust1After, wd1 / 2, "straddling: token1 mostly absorbed");
+        // The other token's leftover in closed form: hat_slack - hat_binding * g_slack / g_binding,
+        // with g_y / g_x = (s - sa) s sb / ((sb - s) 2^192).
+        // Intermediate results carry 64 extra bits so that small integer amounts lose nothing.
+        uint256 ratio = V3Math.mulDiv(s - sa, sb, sb - s); // Q96 times g_y / (g_x s)
+        if (binds0) {
+            uint256 need1 = V3Math.mulDiv(V3Math.mulDiv(hat0 << 64, s, V3Math.Q96), ratio, V3Math.Q96) >> 64;
+            assertApproxEqAbs(j.left1, hat1 - need1, unit1 + 2, "eq:newdust: slack-side leftover");
+        } else {
+            uint256 need0 = V3Math.mulDiv(V3Math.mulDiv(hat1 << 64, V3Math.Q96, ratio), V3Math.Q96, s) >> 64;
+            assertApproxEqAbs(j.left0, hat0 - need0, unit0 + 2, "eq:newdust: slack-side leftover");
         }
     }
 
+    /// @dev Value in token1 units of three base units of token0 at sqrt price `s`. Token0
+    ///      amounts are small integers at this anchor, so a value statement cannot be
+    ///      tighter than this.
+    function _grain(uint160 s) internal pure returns (uint256) {
+        return 3 * V3Math.value0(1e6, s) / 1e6 + 3;
+    }
+
+    function _value(uint256 a0, uint256 a1, uint160 s) internal pure returns (uint256) {
+        return V3Math.value0(a0, s) + a1;
+    }
+
     // =========================================================================
-    // Test 7: multi-position recycle.
-    // Position A's residual is held in the depositor's dust ledger and
-    // consumed in full by Position B's mint, by Equation eq:master.
+    // 1. No swap, empty ledger: the geometric residual of the prior paper.
     // =========================================================================
+    function test_t1_swapfree_zeroDust() public view {
+        Setup memory u = _anchor(1000);
+        V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
 
-    function test_t1_multiPosition_recycle() public {
-        int24 oldLower = _nearest(BASE_TICK - 500);
-        int24 oldUpper = _nearest(BASE_TICK + 500);
-        uint128 lOldA = pool.getLiquidityForAmounts(1 ether, 2500e6, oldLower, oldUpper);
-        (uint256 wdA0, uint256 wdA1) = pool.getAmountsForLiquidity(lOldA, oldLower, oldUpper);
+        console.log("dust0After (WETH):", j.left0);
+        console.log("dust1After (USDC):", j.left1);
+        console.log("Withdrawn value (token1 units):", _value(u.wd0, u.wd1, u.s));
 
-        // Rebalance Position A into a wider range, leaving residual.
-        T1Prediction memory predA = _t1Predict(T1Inputs({
-            newLower: _nearest(DISPLACED_TICK - 1000),
-            newUpper: _nearest(DISPLACED_TICK + 1000),
-            wd0: wdA0, wd1: wdA1,
-            dust0Pre: 0, dust1Pre: 0, sigma0: 0, sigma1: 0
-        }));
+        // After an upward move the position is long token1, and token1 is what is left.
+        assertGt(j.left1, 1e6, "the leftover is in token1");
+        assertLe(j.left0, 1, "token0 binds");
+        // The prior paper reports 2,061 USDC for this set-up; the exact tick arithmetic
+        // here gives a figure within 5% of it.
+        assertApproxEqRel(j.left1, 2061e6, 0.05e18, "within 5% of the prior paper's residual");
+    }
 
-        console.log("After A: dust0/dust1 = ", predA.dust0After, predA.dust1After);
+    // =========================================================================
+    // 2. No swap, a standing balance of the binding token: the mint grows and the
+    //    leftover of the other token falls by the balance times g_y / g_x.
+    // =========================================================================
+    function test_t1_swapfree_nonzeroDust_boundSide() public view {
+        Setup memory u = _anchor(1000);
+        V3Math.Jump memory base = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
 
-        // Position B is now minted into a ±500-tick range centred at the
-        // anchor, with 0.5 ETH + 1,250 USDC fresh inputs PLUS the dust
-        // ledger from A. Per Equation eq:master, A's dust is consumed by B.
-        uint256 freshB0 = 0.5 ether;
-        uint256 freshB1 = 1250e6;
+        // A balance of token0 worth a tenth of the base leftover.
+        uint256 added0 = V3Math.amount0ForValue(base.left1 / 10, u.s);
+        V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0 + added0, u.wd1);
 
-        // Without recycle (baseline): mint Position B with only fresh inputs.
-        T1Prediction memory predB_NoRecycle = _t1Predict(T1Inputs({
-            newLower: oldLower,
-            newUpper: oldUpper,
-            wd0: freshB0, wd1: freshB1,
-            dust0Pre: 0, dust1Pre: 0, sigma0: 0, sigma1: 0
-        }));
+        console.log("Base L_new / with balance:", uint256(base.liquidity), uint256(j.liquidity));
+        console.log("Base dust1After / with balance:", base.left1, j.left1);
 
-        // With recycle: B's effective inputs include A's residual.
-        T1Prediction memory predB_Recycle = _t1Predict(T1Inputs({
-            newLower: oldLower,
-            newUpper: oldUpper,
-            wd0: freshB0, wd1: freshB1,
-            dust0Pre: predA.dust0After,
-            dust1Pre: predA.dust1After,
-            sigma0: 0, sigma1: 0
-        }));
+        assertGt(j.liquidity, base.liquidity, "L_new grows with the binding input");
+        uint256 ratio = V3Math.mulDiv(u.s - u.sa, u.sb, u.sb - u.s);
+        uint256 taken1 = V3Math.mulDiv(V3Math.mulDiv(added0 << 64, u.s, V3Math.Q96), ratio, V3Math.Q96) >> 64;
+        assertApproxEqAbs(base.left1 - j.left1, taken1, 4, "the leftover falls by the balance times g_y / g_x");
+    }
 
-        console.log("B without recycle, L_new:");
-        console.log(uint256(predB_NoRecycle.lNew));
-        console.log("B with recycle (A's dust), L_new:");
-        console.log(uint256(predB_Recycle.lNew));
+    // =========================================================================
+    // 3. No swap, a standing balance of the slack token: the mint is unchanged and
+    //    the leftover rises by exactly the balance.
+    // =========================================================================
+    function test_t1_swapfree_nonzeroDust_slackSide() public view {
+        Setup memory u = _anchor(1000);
+        V3Math.Jump memory base = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
+        uint256 added1 = 5000e6;
+        V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1 + added1);
 
-        // Position B with the recycled dust mints strictly more liquidity.
-        assertGt(predB_Recycle.lNew, predB_NoRecycle.lNew,
-            "recycled dust grows L_new for Position B");
+        console.log("Base dust1After / with balance:", base.left1, j.left1);
+        assertEq(uint256(j.liquidity), uint256(base.liquidity), "L_new unchanged by the slack input");
+        assertEq(j.left0, base.left0, "binding-side leftover unchanged");
+        assertEq(j.left1, base.left1 + added1, "the leftover rises by exactly the balance");
+    }
 
-        // Conservation: A's slack-side dust either fully absorbs (becomes
-        // zero) or persists into B's slack-side dust, but never disappears
-        // unaccounted.
-        uint256 sumDust0Before = predA.dust0After + 0;
-        uint256 sumDust1Before = predA.dust1After + 0;
-        uint256 sumDust0After  = predB_Recycle.dust0After;
-        uint256 sumDust1After  = predB_Recycle.dust1After;
+    // =========================================================================
+    // 4. A swap short of the amount that would leave nothing: the same token is
+    //    left, and less of it.
+    // =========================================================================
+    function test_t1_swap_belowThreshold() public view {
+        Setup memory u = _anchor(1000);
+        V3Math.Jump memory base = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
 
-        // Total tokens in the system (across A's residual + B's fresh inputs +
-        // B's resulting position) must equal total tokens out.
-        (uint256 usedB0, uint256 usedB1) = (predB_Recycle.used0, predB_Recycle.used1);
-        assertEq(
-            sumDust0Before + freshB0,
-            usedB0 + sumDust0After,
-            "token0 conservation across recycle"
+        (uint256 a, uint256 b) = V3Math.requiredValues(u.s, u.sa, u.sb);
+        uint256 perfect = V3Math.mulDiv(_value(u.wd0, u.wd1, u.s), a, a + b) - V3Math.value0(u.wd0, u.s);
+        uint256 paid1 = perfect / 2;
+        uint256 got0 = V3Math.amount0ForValue(paid1, u.s);
+        V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0 + got0, u.wd1 - paid1);
+
+        console.log("Leftover (token1) without / with the swap:", base.left1, j.left1);
+        assertLe(j.left0, 1, "token0 still binds");
+        assertLt(j.left1, base.left1, "the swap reduces the leftover");
+        assertApproxEqAbs(
+            j.left1,
+            V3Math.mulDiv(perfect - paid1, a + b, a),
+            2 * _grain(u.s),
+            "leftover: shortfall over the required share"
         );
-        assertEq(
-            sumDust1Before + freshB1,
-            usedB1 + sumDust1After,
-            "token1 conservation across recycle"
+    }
+
+    // =========================================================================
+    // 5. A swap beyond that amount: the binding side flips and the token the swap
+    //    bought is left.
+    // =========================================================================
+    function test_t1_swap_overshoot() public view {
+        Setup memory u = _anchor(1000);
+        (uint256 a, uint256 b) = V3Math.requiredValues(u.s, u.sa, u.sb);
+        uint256 perfect = V3Math.mulDiv(_value(u.wd0, u.wd1, u.s), a, a + b) - V3Math.value0(u.wd0, u.s);
+        uint256 paid1 = perfect * 3 / 2;
+        uint256 got0 = V3Math.amount0ForValue(paid1, u.s);
+        V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0 + got0, u.wd1 - paid1);
+
+        console.log("Overshoot dust0After / dust1After:", j.left0, j.left1);
+        assertLe(j.left1, 2, "token1 now binds");
+        assertApproxEqAbs(
+            V3Math.value0(j.left0, u.s),
+            V3Math.mulDiv(paid1 - perfect, a + b, b),
+            2 * _grain(u.s),
+            "leftover in token0: excess over the required share"
         );
+    }
+
+    // =========================================================================
+    // 6. The price outside the new range, and inside it.
+    // =========================================================================
+    function test_t1_threeSubcases() public view {
+        Setup memory u = _anchor(1000);
+
+        // (a) New range wholly above the price: the mint takes token0 only.
+        {
+            uint160 sa = _sqrt(_nearest(DISPLACED_TICK + 1500));
+            uint160 sb = _sqrt(_nearest(DISPLACED_TICK + 3500));
+            V3Math.Jump memory j = V3Math.mint(u.s, sa, sb, u.wd0, u.wd1);
+            (uint256 more0,) = V3Math.amountsUp(u.s, sa, sb, j.liquidity + 1);
+            console.log("Subcase (a) above the price: dust0 / dust1 =", j.left0, j.left1);
+            assertEq(j.left1, u.wd1, "above the price: token1 is credited whole");
+            assertEq(j.used1, 0, "above the price: no token1 is taken");
+            assertGt(more0, u.wd0, "above the price: the mint takes all the token0 it can");
+        }
+        // (b) New range wholly below the price: the mint takes token1 only.
+        {
+            uint160 sa = _sqrt(_nearest(DISPLACED_TICK - 3500));
+            uint160 sb = _sqrt(_nearest(DISPLACED_TICK - 1500));
+            V3Math.Jump memory j = V3Math.mint(u.s, sa, sb, u.wd0, u.wd1);
+            (, uint256 more1) = V3Math.amountsUp(u.s, sa, sb, j.liquidity + 1);
+            console.log("Subcase (b) below the price: dust0 / dust1 =", j.left0, j.left1);
+            assertEq(j.left0, u.wd0, "below the price: token0 is credited whole");
+            assertEq(j.used0, 0, "below the price: no token0 is taken");
+            assertGt(more1, u.wd1, "below the price: the mint takes all the token1 it can");
+        }
+        // (c) The price inside the new range: Theorem 1 as stated.
+        {
+            V3Math.Jump memory j = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
+            console.log("Subcase (c) inside: dust0 / dust1 =", j.left0, j.left1);
+            assertGt(j.used0, 0, "inside: token0 is taken");
+            assertGt(j.used1, 0, "inside: token1 is taken");
+        }
+    }
+
+    // =========================================================================
+    // 7. A leftover drawn into another position's mint. Position A leaves token1.
+    //    Position B is opened with inputs short of token1 by 2,000 units of value and
+    //    takes that much of A's leftover; the rest stays in the ledger.
+    // =========================================================================
+    function test_t1_multiPosition_recycle() public view {
+        Setup memory u = _anchor(1000);
+        V3Math.Jump memory ja = _jump(u.s, u.sa, u.sb, u.wd0, u.wd1);
+        uint256 ledger1 = ja.left1;
+
+        // B: a range centred in tick space on the price, so it takes the tokens in equal value.
+        uint160 sa = _sqrt(DISPLACED_TICK - 600);
+        uint160 sb = _sqrt(DISPLACED_TICK + 600);
+        uint256 fresh0 = V3Math.amount0ForValue(3000e6, u.s);
+        uint256 fresh1 = 1000e6;
+
+        V3Math.Jump memory alone = _jump(u.s, sa, sb, fresh0, fresh1);
+        V3Math.Jump memory shared = _jump(u.s, sa, sb, fresh0 + ja.left0, fresh1 + ledger1);
+
+        console.log("Ledger entry of token1 after A / after B:", ledger1, shared.left1);
+        console.log("B's liquidity alone / with the ledger:", uint256(alone.liquidity), uint256(shared.liquidity));
+
+        assertGt(V3Math.value0(alone.left0, u.s), 1900e6, "alone, B leaves token0: it is short of token1");
+        assertGt(shared.liquidity, alone.liquidity, "with the ledger, B mints more");
+        assertLe(shared.left0, 1, "B now uses its token0");
+        // B needed 2,000 more of token1 and took it from what A left.
+        assertApproxEqAbs(ledger1 - shared.left1, 2000e6, 2 * _grain(u.s), "B drew its shortfall from A's leftover");
+        assertLt(shared.left1, ledger1, "the ledger entry fell");
+    }
+
+    // =========================================================================
+    // 8. The mock pool in `src/` and the model used above agree on a burn and on
+    //    the liquidity for given amounts.
+    // =========================================================================
+    function test_mock_poolAgreesWithModel() public {
+        MockCLPoolV2 pool = new MockCLPoolV2(BASE_TICK);
+        int24[5] memory moves = [int24(-400), int24(-150), int24(0), int24(200), int24(450)];
+        int24 lo = _nearest(BASE_TICK - 500);
+        int24 hi = _nearest(BASE_TICK + 500);
+        for (uint256 i = 0; i < moves.length; i++) {
+            pool.movePriceToTick(BASE_TICK + moves[i]);
+            uint160 s = _sqrt(BASE_TICK + moves[i]);
+            uint128 l = pool.getLiquidityForAmounts(1 ether, 2500e6, lo, hi);
+            assertEq(
+                uint256(l),
+                uint256(V3Math.liquidityForAmounts(s, _sqrt(lo), _sqrt(hi), 1 ether, 2500e6)),
+                "liquidity for amounts"
+            );
+            (uint256 a0, uint256 a1) = pool.getAmountsForLiquidity(l, lo, hi);
+            (uint256 m0, uint256 m1) = V3Math.amountsDown(s, _sqrt(lo), _sqrt(hi), l);
+            assertEq(a0, m0, "token0 of a burn");
+            assertEq(a1, m1, "token1 of a burn");
+        }
     }
 }

@@ -7,10 +7,13 @@ authors:
     alias: Gancor
     orcid: "https://orcid.org/0009-0004-6295-7040"
 type: software
+version: "1.1"
+date-released: 2026-11-23
 doi: "10.5281/zenodo.20115374"
 repository-code: "https://github.com/g4nc0r/hidden-microstructure"
-# license covers the code in this repository; the paper PDF and LaTeX source
-# are (c) K. R. Ryan, all rights reserved. See the Licence section of README.md.
+# license covers the code in this repository; the paper and supplement PDFs and
+# LaTeX sources are (c) K. R. Ryan, all rights reserved. See the Licence entry
+# in README.md.
 license: MIT
 references:
   - type: report
@@ -25,7 +28,7 @@ references:
     number: "6745218"
     doi: "10.2139/ssrn.6745218"
     url: "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6745218"
-    notes: "Preprint live on SSRN; revised July 2026. Companion paper to The Geometric Siphon (SSRN 6686798)."
+    notes: "Preprint live on SSRN; revised November 2026. Extends The Geometric Siphon (SSRN 6686798)."
   - type: report
     title: "The Geometric Siphon: Existence, Equilibrium, and Directional Properties of the Residual in Concentrated Liquidity Portfolios"
     authors:

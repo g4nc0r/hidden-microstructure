@@ -2,8 +2,10 @@
 Shared definitions for the Lean formalisation of "The Hidden Microstructure of
 Shared-Balance Concentrated Liquidity".
 
-The V3 amount functions of Appendix B and the mint linear programme of
-Theorem 1 (§4.1), used by every theorem file.
+The V3 amount functions (the appendix "V3 amount formulas") and the mint
+linear programme of Theorem 1, used by every theorem file. Statements are
+named as in the November 2026 revision of the paper; equation numbers are not
+cited, since they move between versions.
 
 Setting: a pool with tokens `Ta` at the `T0` position and `Tb` at the `T1`
 position, sqrt price `s`, new range `[sa', sb']`, per-unit-liquidity token
@@ -21,7 +23,7 @@ set_option linter.style.header false
 
 namespace MasterEquation
 
-/-! ## V3 amount functions (Appendix B) -/
+/-! ## V3 amount functions -/
 
 /-- V3 token-0 amount per unit liquidity over `[sa, sb]` at sqrt price `s`. -/
 noncomputable def ax (s sa sb : ℝ) : ℝ :=
@@ -58,24 +60,24 @@ lemma amount_coeffs_pos {s sa sb : ℝ} (h0 : 0 < sa) (h1 : sa < s) (h2 : s < sb
   rw [ax_of_mem h1 h2, ay_of_mem h1 h2]
   exact ⟨sub_pos.mpr (one_div_lt_one_div_of_lt hs h2), sub_pos.mpr h1⟩
 
-/-- `ay` is monotone in the sqrt price (Appendix B). -/
+/-- `ay` is monotone in the sqrt price. -/
 lemma ay_mono {sa sb : ℝ} (hab : sa ≤ sb) : Monotone (fun s => ay s sa sb) := by
   intro u v huv
   simp only [ay]
   split_ifs <;> first | rfl | linarith
 
-/-! ## The mint linear programme (Theorem 1, §4.1) -/
+/-! ## The mint linear programme (Theorem 1) -/
 
-/-- New liquidity from the mint LP, eq. (3): `L_new = min (x̂ / g_x) (ŷ / g_y)`. -/
+/-- New liquidity from the mint LP: `L_new = min (x̂ / g_x) (ŷ / g_y)`. -/
 noncomputable def Lnew (xh yh gx gy : ℝ) : ℝ := min (xh / gx) (yh / gy)
 
-/-- Token-0 dust credit after the mint, eq. (4). -/
+/-- Token-0 ledger entry after the mint. -/
 noncomputable def dustX (xh yh gx gy : ℝ) : ℝ := xh - Lnew xh yh gx gy * gx
 
-/-- Token-1 dust credit after the mint, eq. (4). -/
+/-- Token-1 ledger entry after the mint. -/
 noncomputable def dustY (xh yh gx gy : ℝ) : ℝ := yh - Lnew xh yh gx gy * gy
 
-/-- The feasible set of the mint LP, eq. (A.1). -/
+/-- The feasible set of the mint LP. -/
 def mintFeasible (xh yh gx gy : ℝ) : Set ℝ :=
   {L : ℝ | 0 ≤ L ∧ L * gx ≤ xh ∧ L * gy ≤ yh}
 

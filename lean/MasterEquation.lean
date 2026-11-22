@@ -1,8 +1,8 @@
 import MasterEquation.Defs
 import MasterEquation.MasterJump
+import MasterEquation.BindingSide
 import MasterEquation.Conservation
-import MasterEquation.ConnectorRule
-import MasterEquation.HubSpoke
+import MasterEquation.Transfers
+import MasterEquation.DirectionKernel
 import MasterEquation.SpokeMarginal
-import MasterEquation.Doeblin
 import MasterEquation.GaussianMoment

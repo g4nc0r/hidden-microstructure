@@ -1,10 +1,14 @@
 /-
-The remaining moment identity of Corollary 1.
+The moment identity of the Gaussian case of Proposition 3 (the Remark after
+it; Corollary 1 of the July 2026 version).
 
-Corollary 1 displays two explicit moments of the limiting spoke law under
-symmetric Gaussian slippage. The atom mass `P(D = 0) = 1/2` is proved in
-`SpokeMarginal.lean`. This file supplies the other,
-`E[D | D > 0] = β √(2/π)`, which needs the half-Gaussian first moment.
+The Remark gives two explicit quantities of the leading-order spoke law
+under symmetric Gaussian residuals. The atom `P(B_k = 0) = 1/2` is proved in
+`SpokeMarginal.lean`. This file supplies the other, the mean `β √(2/π)` of
+the half-normal law (the paper writes its scale σ_hn), which needs the
+half-Gaussian first moment. The Gaussian here is not conditioned to
+`[-K, K]` as it is in the Remark; the paper gives the relative error of
+that conditioning.
 Mathlib has no absolute or one-sided moment for the Gaussian, so the
 underlying first-passage integral is built here from the fundamental theorem
 of calculus on `Ioi 0`.
@@ -64,7 +68,7 @@ open ProbabilityTheory
 
 /-- The one-sided first moment of a mean-zero Gaussian. Mathlib has no
 absolute or one-sided moment for the Gaussian; this is the missing piece of
-Corollary 1. -/
+the Gaussian case. -/
 theorem integral_Ioi_gaussianReal {v : NNReal} (hv : v ≠ 0) :
     ∫ x in Ioi (0 : ℝ), x ∂(gaussianReal 0 v) = (√(2 * π * v))⁻¹ * v := by
   have hvpos : (0 : ℝ) < (v : ℝ) := by
@@ -86,11 +90,11 @@ theorem integral_Ioi_gaussianReal {v : NNReal} (hv : v ≠ 0) :
   congr 1
   field_simp
 
-/-! ## Corollary 1's conditional mean -/
+/-! ## The half-normal mean of the Gaussian case -/
 
-/-- The scale identity behind `E[D | D > 0] = β √(2/π)`: doubling the
-one-sided moment of a mean-zero Gaussian of standard deviation `σ` (the
-conditioning on `ε ≥ 0` divides by the mass `1/2`) gives `σ √(2/π)`. -/
+/-- The scale identity behind the mean `β √(2/π)`: doubling the one-sided
+moment of a mean-zero Gaussian of standard deviation `σ` (the conditioning on
+one sign divides by the mass `1/2`) gives `σ √(2/π)`. -/
 theorem two_mul_oneSided_eq {σ : ℝ} (hσ : 0 < σ) :
     2 * ((√(2 * π * σ ^ 2))⁻¹ * σ ^ 2) = σ * √(2 / π) := by
   have hπ : (0 : ℝ) < π := pi_pos
@@ -107,10 +111,10 @@ theorem two_mul_oneSided_eq {σ : ℝ} (hσ : 0 < σ) :
   field_simp
   nlinarith [h2, hp, hσ, Real.sqrt_nonneg 2, Real.sqrt_nonneg π]
 
-/-- **Corollary 1, second moment identity.** Under symmetric Gaussian slippage
-of standard deviation `σ`, the conditional mean of the limiting spoke law
-given that it is positive is `β √(2/π)`, with `β = L w σ (1 + s_h²) / 2` the
-scale of Corollary 1. -/
+/-- **The Gaussian case, the half-normal mean.** Under symmetric Gaussian residuals
+of standard deviation `σ`, the mean of the leading-order slack-side law is
+`β √(2/π)`, with `β = c₀ L w σ` the scale of the Remark, the constant `c₀`
+being written here as `(1 + sh2) / 2` (one in the paper's case `sh2 = 1`). -/
 theorem conditional_mean_eq {L w sh2 σ : ℝ} (hσ : 0 < σ) :
     L * w / 2 * (1 + sh2) * (2 * ((√(2 * π * σ ^ 2))⁻¹ * σ ^ 2))
       = L * w * σ * (1 + sh2) / 2 * √(2 / π) := by

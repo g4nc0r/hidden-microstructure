@@ -1,0 +1,43 @@
+name: Lean build
+
+on:
+  push:
+    branches: [main]
+    paths: ["lean/**", ".github/workflows/lean.yml"]
+  pull_request:
+    paths: ["lean/**", ".github/workflows/lean.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and axiom audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the library
+        uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          use-mathlib-cache: "true"
+          build: "true"
+          test: "false"
+          lint: "false"
+
+      - name: Axiom audit
+        working-directory: lean
+        run: |
+          lake env lean AxiomCheck.lean | tee axioms.out
+          count=$(grep -c "depends on axioms" axioms.out || true)
+          # a long name wraps its axiom list over two lines, so the lists are read from the joined output
+          other=$(tr '\n' ' ' < axioms.out | grep -o '\[[^]]*\]' | tr -d '[] ' | tr ',' '\n' \
+            | sort -u | grep -v -x -E 'propext|Classical\.choice|Quot\.sound' || true)
+          echo "statements audited: $count"
+          if [ "$count" -eq 0 ]; then echo "no audit output"; exit 1; fi
+          want=$(grep -c '^#print axioms' AxiomCheck.lean)
+          if [ "$count" -ne "$want" ]; then echo "audited $count of $want statements"; exit 1; fi
+          if [ -n "$other" ]; then echo "axioms outside the standard three:"; echo "$other"; exit 1; fi
+          if grep -q -E "sorry|error" axioms.out; then echo "sorry or error in audit output"; exit 1; fi

@@ -12,9 +12,9 @@ contract MockCLPool {
     uint256 constant Q96 = 2**96;
 
     /// @notice Tick anchor for the linear sqrt-price approximation;
-    ///         corresponds to a price of ≈2500 (sqrt(2500) ≈ 50).
+    ///         the anchor sqrt price is 3.97 × 2^96, a raw price of about 15.8.
     int24 internal constant ANCHOR_TICK = 73135;
-    uint256 internal constant ANCHOR_SQRT_PRICE = 314748404868481885948183330816; // sqrt(2500) * 2^96
+    uint256 internal constant ANCHOR_SQRT_PRICE = 314748404868481885948183330816;
 
     constructor(uint160 _sqrtPriceX96) {
         sqrtPriceX96 = _sqrtPriceX96;
@@ -139,8 +139,9 @@ contract MockCLPool {
     /// @dev    Each tick ≈ 0.01% price change ≈ 0.005% sqrt-price change, so the
     ///         linear coefficient is 5 / 100,000 per tick offset from ANCHOR_TICK.
     ///         Sufficient for ≤1% rounding versus exact V3 TickMath in the
-    ///         reported §6 mock-pool numbers; see MockCLPoolV2 for the exact
-    ///         override used by Theorems 4-6.
+    ///         §6 mock-pool numbers reported in the prior paper (The Geometric
+    ///         Siphon); see MockCLPoolV2 for the exact override used by its
+    ///         Theorems 4 to 6.
     function getSqrtRatioAtTick(int24 _tick) public pure virtual returns (uint160) {
         int256 tickDelta = int256(_tick) - int256(ANCHOR_TICK);
         int256 adjustment = int256(ANCHOR_SQRT_PRICE) * tickDelta * 5 / 100000;
